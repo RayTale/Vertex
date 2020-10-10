@@ -1,0 +1,12 @@
+﻿using Vertex.Abstractions.Event;
+using Vertext.Abstractions.Event;
+
+namespace Transfer.Grains.Events
+{
+    [EventName(nameof(TransferArrivedEvent))]
+    public class TransferArrivedEvent : IEvent
+    {
+        public decimal Amount { get; set; }
+        public decimal Balance { get; set; }
+    }
+}

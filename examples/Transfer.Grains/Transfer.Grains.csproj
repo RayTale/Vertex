@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" Version="3.3.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Storage\Vertex.Storage.Linq2db\Vertex.Storage.Linq2db.csproj" />
+    <ProjectReference Include="..\..\src\Stream\Vertex.Stream.Common\Vertex.Stream.Common.csproj" />
+    <ProjectReference Include="..\..\src\Vertex.Runtime\Vertex.Runtime.csproj" />
+    <ProjectReference Include="..\Transfer.IGrains\Transfer.IGrains.csproj" />
+  </ItemGroup>
+
+</Project>

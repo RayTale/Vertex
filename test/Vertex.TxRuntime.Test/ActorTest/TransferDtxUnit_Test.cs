@@ -1,0 +1,166 @@
+﻿using Orleans.TestingHost;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Vertex.TxRuntime.Core;
+using Vertex.TxRuntime.Test.Biz.IActors;
+using Vertex.TxRuntime.Test.Biz.Models;
+using Xunit;
+
+namespace Vertex.TxRuntime.Test.ActorTest
+{
+    [Collection(ClusterCollection.Name)]
+    public class TransferDtxUnit_Test
+    {
+        private readonly TestCluster _cluster;
+        public TransferDtxUnit_Test(ClusterFixture fixture)
+        {
+            _cluster = fixture.Cluster;
+        }
+        [Theory]
+        [InlineData(300, 400, 1)]
+        [InlineData(301, 401, 100)]
+        [InlineData(302, 402, 1000)]
+        [InlineData(303, 403, 1800)]
+        public async Task Transfer_Success(int fromId, int toId, int times)
+        {
+            decimal topupAmount = 100;
+            var guids = Enumerable.Range(0, times).Select(i => Guid.NewGuid().ToString()).ToList();
+            var fromAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(fromId);
+            var toAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(toId);
+            var txUnit = _cluster.GrainFactory.GetGrain<ITransferDtxUnit>(times);
+
+            await Task.WhenAll(Enumerable.Range(0, times).Select(i => fromAccountActor.TopUp(topupAmount, guids[i])));
+            var fromSnapshot = await fromAccountActor.GetSnapshot();
+            Assert.Equal(fromSnapshot.Data.Balance, topupAmount * times);
+            Assert.Equal(fromSnapshot.Meta.Version, times);
+            Assert.Equal(fromSnapshot.Meta.Version, fromSnapshot.Meta.DoingVersion);
+
+            var toSnapshot = await toAccountActor.GetSnapshot();
+            Assert.True(toSnapshot.Data.Balance == 0);
+            Assert.True(toSnapshot.Meta.Version == 0);
+            Assert.True(toSnapshot.Meta.DoingVersion == 0);
+
+            var results = await Task.WhenAll(Enumerable.Range(0, times).Select(i => txUnit.Ask(new TransferRequest
+            {
+                FromId = fromId,
+                ToId = toId,
+                Amount = topupAmount,
+                Success = true,
+                Id = $"trans{guids[i]}"
+            })));
+            Assert.True(results.All(r => r));
+            fromSnapshot = await fromAccountActor.GetSnapshot();
+            Assert.True(fromSnapshot.Data.Balance == 0);
+            Assert.True(fromSnapshot.Meta.Version == times * 2);
+            Assert.True(fromSnapshot.Meta.DoingVersion == fromSnapshot.Meta.DoingVersion);
+
+            toSnapshot = await toAccountActor.GetSnapshot();
+            Assert.Equal(toSnapshot.Data.Balance, topupAmount * times);
+            Assert.Equal(toSnapshot.Meta.Version, times);
+            Assert.Equal(toSnapshot.Meta.Version, toSnapshot.Meta.DoingVersion);
+
+            var unitDocuments = await txUnit.GetEventDocuments(1, times * 5);
+            Assert.True(unitDocuments.Count == times * 3);
+        }
+        [Theory]
+        [InlineData(3000, 4000, 1)]
+        [InlineData(3001, 4001, 100)]
+        [InlineData(3002, 4002, 1000)]
+        [InlineData(3003, 4003, 1800)]
+        public async Task Transfer_Rollback(int fromId, int toId, int times)
+        {
+            decimal topupAmount = 100;
+            var guids = Enumerable.Range(0, times).Select(i => Guid.NewGuid().ToString()).ToList();
+            var fromAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(fromId);
+            var toAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(toId);
+            var txUnit = _cluster.GrainFactory.GetGrain<ITransferDtxUnit>(times);
+
+            await Task.WhenAll(Enumerable.Range(0, times).Select(i => fromAccountActor.TopUp(topupAmount, guids[i])));
+            var fromSnapshot = await fromAccountActor.GetSnapshot();
+            Assert.Equal(fromSnapshot.Data.Balance, topupAmount * times);
+            Assert.Equal(fromSnapshot.Meta.Version, times);
+            Assert.Equal(fromSnapshot.Meta.Version, fromSnapshot.Meta.DoingVersion);
+
+            var toSnapshot = await toAccountActor.GetSnapshot();
+            Assert.True(toSnapshot.Data.Balance == 0);
+            Assert.True(toSnapshot.Meta.Version == 0);
+            Assert.True(toSnapshot.Meta.DoingVersion == 0);
+
+            var results = await Task.WhenAll(Enumerable.Range(0, times).Select(i => txUnit.Ask(new TransferRequest
+            {
+                FromId = fromId,
+                ToId = toId,
+                Amount = topupAmount,
+                Success = false,
+                Id = $"trans{guids[i]}"
+            })));
+            Assert.True(results.All(r => !r));
+            fromSnapshot = await fromAccountActor.GetSnapshot();
+            Assert.Equal(fromSnapshot.Data.Balance, topupAmount * times);
+            Assert.Equal(fromSnapshot.Meta.Version, times);
+            Assert.Equal(fromSnapshot.Meta.Version, fromSnapshot.Meta.DoingVersion);
+
+            toSnapshot = await toAccountActor.GetSnapshot();
+            Assert.True(toSnapshot.Data.Balance == 0);
+            Assert.True(toSnapshot.Meta.Version == 0);
+            Assert.True(toSnapshot.Meta.DoingVersion == 0);
+
+            var unitDocuments = await txUnit.GetEventDocuments(1, times * 3);
+            Assert.True(unitDocuments.Count == 0);
+        }
+        [Theory]
+        [InlineData(30000, 40000, 1)]
+        [InlineData(30001, 40001, 100)]
+        [InlineData(30002, 40002, 1000)]
+        [InlineData(30003, 40003, 1800)]
+        public async Task Transfer_Error(int fromId, int toId, int times)
+        {
+            decimal topupAmount = 100;
+            var guids = Enumerable.Range(0, times).Select(i => Guid.NewGuid().ToString()).ToList();
+            var fromAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(fromId);
+            var toAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount_Error>(toId);
+            var txUnit = _cluster.GrainFactory.GetGrain<ITransferDtxUnit_Error>(times);
+
+            await Task.WhenAll(Enumerable.Range(0, times).Select(i => fromAccountActor.TopUp(topupAmount, guids[i])));
+            var fromSnapshot = await fromAccountActor.GetSnapshot();
+            Assert.Equal(fromSnapshot.Data.Balance, topupAmount * times);
+            Assert.Equal(fromSnapshot.Meta.Version, times);
+            Assert.Equal(fromSnapshot.Meta.Version, fromSnapshot.Meta.DoingVersion);
+
+            var toSnapshot = await toAccountActor.GetSnapshot();
+            Assert.True(toSnapshot.Data.Balance == 0);
+            Assert.True(toSnapshot.Meta.Version == 0);
+            Assert.True(toSnapshot.Meta.DoingVersion == 0);
+
+            var ex_1 = await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                var results = await Task.WhenAll(Enumerable.Range(0, times).Select(i => txUnit.Ask(new TransferRequest
+                {
+                    FromId = fromId,
+                    ToId = toId,
+                    Amount = topupAmount,
+                    Success = true,
+                    Id = $"trans{guids[i]}"
+                })));
+                Assert.True(results.All(r => !r));
+            });
+            Assert.True(ex_1 is Exception);
+
+            fromSnapshot = await fromAccountActor.GetSnapshot();
+            Assert.Equal(fromSnapshot.Data.Balance, topupAmount * times);
+            Assert.Equal(fromSnapshot.Meta.Version, times);
+            Assert.Equal(fromSnapshot.Meta.Version, fromSnapshot.Meta.DoingVersion);
+
+            toSnapshot = await toAccountActor.GetSnapshot();
+            Assert.True(toSnapshot.Data.Balance == 0);
+            Assert.True(toSnapshot.Meta.Version == 0);
+            Assert.True(toSnapshot.Meta.DoingVersion == 0);
+
+            var unitDocuments = await txUnit.GetEventDocuments(1, times * 3);
+            Assert.True(unitDocuments.Count == times * 2);
+        }
+    }
+}
