@@ -41,7 +41,8 @@ namespace Vertex.Storage.Linq2db.Storage
         }
         public static async Task<List<string>> GetTables(this DataConnection conn)
         {
-            if (conn.DataProvider.ConnectionNamespace == ConnectionNamespace.SQLite)
+            if (conn.DataProvider.Name == DbProviderName.SQLite
+                || conn.DataProvider.Name == DbProviderName.MSSQLite)
             {
                 return await conn.QueryToListAsync<string>("SELECT name FROM sqlite_master WHERE type='table'");
             }

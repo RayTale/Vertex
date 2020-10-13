@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Storage;
 using Vertex.Storage.Linq2db.Db;
-using Vertex.Storage.Linq2db.Entitys;
+using Vertex.Storage.Linq2db.Entities;
 using Vertex.Storage.Linq2db.Storage;
 
 namespace Vertex.Storage.EFCore.Storage

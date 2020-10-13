@@ -8,7 +8,7 @@ using Vertex.Abstractions.Exceptions;
 using Vertex.Storage.EFCore.Storage;
 using Vertex.Storage.Linq2db.Core;
 using Vertex.Storage.Linq2db.Db;
-using Vertex.Storage.Linq2db.Entitys;
+using Vertex.Storage.Linq2db.Entities;
 using Vertex.Storage.Linq2db.Index;
 using Vertex.Transaction.Abstractions.Storage;
 

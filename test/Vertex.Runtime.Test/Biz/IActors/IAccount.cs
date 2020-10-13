@@ -54,7 +54,7 @@ namespace Vertex.Runtime.Test.IActors
         Task RecoverySnapshot_Test();
         Task Deactivate_Test();
         Task<(bool can, long endTimestamp)> CanArchive_Test();
-        ValueTask Archive_Test(long endTimestamp);
+        Task Archive_Test(long endTimestamp);
         Task<int> GetArchiveEventCount();
         Task<List<EventDocumentDto>> GetEventDocuments_FromEventStorage(long startVersion, long endVersion);
 

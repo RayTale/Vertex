@@ -17,7 +17,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
     {
         private static readonly TimeSpan whileTimeoutSpan = TimeSpan.FromMilliseconds(100);
         private bool isFirst = true;
-        private bool closed = false;
+        private bool closed;
         private readonly IStreamSubHandler streamSubHandler;
         private readonly ConsumerOptions consumerOptions;
         public ConsumerRunner(

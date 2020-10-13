@@ -34,7 +34,6 @@ namespace Vertex.TxRuntime.Test.Biz.Actors
         protected override ValueTask OnTxCommit(string txId)
         {
             throw new Exception(nameof(OnTxCommit));
-            return base.OnTxCommit(txId);
         }
         public async Task<bool> Transfer(long toAccountId, decimal amount)
         {

@@ -115,7 +115,7 @@ namespace Vertex.Runtime.Test.Actors
         {
             return Task.FromResult(base.CanArchive());
         }
-        public ValueTask Archive_Test(long endTimestamp)
+        public Task Archive_Test(long endTimestamp)
         {
             return base.Archive(endTimestamp);
         }

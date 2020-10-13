@@ -1,8 +1,6 @@
 ﻿using Orleans.TestingHost;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Vertex.TxRuntime.Core;
 using Vertex.TxRuntime.Test.Biz.IActors;
@@ -20,10 +18,10 @@ namespace Vertex.TxRuntime.Test.ActorTest
             _cluster = fixture.Cluster;
         }
         [Theory]
-        [InlineData(300, 400, 1)]
-        [InlineData(301, 401, 100)]
-        [InlineData(302, 402, 1000)]
-        [InlineData(303, 403, 1800)]
+        [InlineData(3000, 4000, 1)]
+        [InlineData(3001, 4001, 100)]
+        [InlineData(3002, 4002, 1000)]
+        [InlineData(3003, 4003, 1800)]
         public async Task Transfer_Success(int fromId, int toId, int times)
         {
             decimal topupAmount = 100;
@@ -32,7 +30,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
             var toAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(toId);
             var txUnit = _cluster.GrainFactory.GetGrain<ITransferDtxUnit>(times);
 
-            await Task.WhenAll(Enumerable.Range(0, times).Select(i => fromAccountActor.TopUp(topupAmount, guids[i])));
+            await Task.WhenAll(Enumerable.Range(0, times).Select(i => fromAccountActor.NoTxTopUp(topupAmount, guids[i])));
             var fromSnapshot = await fromAccountActor.GetSnapshot();
             Assert.Equal(fromSnapshot.Data.Balance, topupAmount * times);
             Assert.Equal(fromSnapshot.Meta.Version, times);
@@ -49,7 +47,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
                 ToId = toId,
                 Amount = topupAmount,
                 Success = true,
-                Id = $"trans{guids[i]}"
+                Id = $"trans0{guids[i]}"
             })));
             Assert.True(results.All(r => r));
             fromSnapshot = await fromAccountActor.GetSnapshot();
@@ -66,10 +64,10 @@ namespace Vertex.TxRuntime.Test.ActorTest
             Assert.True(unitDocuments.Count == times * 3);
         }
         [Theory]
-        [InlineData(3000, 4000, 1)]
-        [InlineData(3001, 4001, 100)]
-        [InlineData(3002, 4002, 1000)]
-        [InlineData(3003, 4003, 1800)]
+        [InlineData(30000, 40000, 2)]
+        [InlineData(30001, 40001, 200)]
+        [InlineData(30002, 40002, 2000)]
+        [InlineData(30003, 40003, 2800)]
         public async Task Transfer_Rollback(int fromId, int toId, int times)
         {
             decimal topupAmount = 100;
@@ -78,7 +76,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
             var toAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(toId);
             var txUnit = _cluster.GrainFactory.GetGrain<ITransferDtxUnit>(times);
 
-            await Task.WhenAll(Enumerable.Range(0, times).Select(i => fromAccountActor.TopUp(topupAmount, guids[i])));
+            await Task.WhenAll(Enumerable.Range(0, times).Select(i => fromAccountActor.NoTxTopUp(topupAmount, guids[i])));
             var fromSnapshot = await fromAccountActor.GetSnapshot();
             Assert.Equal(fromSnapshot.Data.Balance, topupAmount * times);
             Assert.Equal(fromSnapshot.Meta.Version, times);
@@ -95,7 +93,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
                 ToId = toId,
                 Amount = topupAmount,
                 Success = false,
-                Id = $"trans{guids[i]}"
+                Id = $"trans1{guids[i]}"
             })));
             Assert.True(results.All(r => !r));
             fromSnapshot = await fromAccountActor.GetSnapshot();
@@ -112,10 +110,10 @@ namespace Vertex.TxRuntime.Test.ActorTest
             Assert.True(unitDocuments.Count == 0);
         }
         [Theory]
-        [InlineData(30000, 40000, 1)]
-        [InlineData(30001, 40001, 100)]
-        [InlineData(30002, 40002, 1000)]
-        [InlineData(30003, 40003, 1800)]
+        [InlineData(300000, 400000, 3)]
+        [InlineData(300001, 400001, 300)]
+        [InlineData(300002, 400002, 3000)]
+        [InlineData(300003, 400003, 3800)]
         public async Task Transfer_Error(int fromId, int toId, int times)
         {
             decimal topupAmount = 100;
@@ -124,7 +122,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
             var toAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount_Error>(toId);
             var txUnit = _cluster.GrainFactory.GetGrain<ITransferDtxUnit_Error>(times);
 
-            await Task.WhenAll(Enumerable.Range(0, times).Select(i => fromAccountActor.TopUp(topupAmount, guids[i])));
+            await Task.WhenAll(Enumerable.Range(0, times).Select(i => fromAccountActor.NoTxTopUp(topupAmount, guids[i])));
             var fromSnapshot = await fromAccountActor.GetSnapshot();
             Assert.Equal(fromSnapshot.Data.Balance, topupAmount * times);
             Assert.Equal(fromSnapshot.Meta.Version, times);
@@ -143,7 +141,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
                     ToId = toId,
                     Amount = topupAmount,
                     Success = true,
-                    Id = $"trans{guids[i]}"
+                    Id = $"trans2{guids[i]}"
                 })));
                 Assert.True(results.All(r => !r));
             });

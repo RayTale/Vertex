@@ -1,12 +1,13 @@
 ﻿using IdGen;
 using Microsoft.Extensions.Logging;
+using Orleans;
 using Orleans.Runtime;
 using System;
 using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Vertex.Runtime.Actor;
+using Vertex.Runtime;
 using Vertex.Transaction.Abstractions;
 using Vertex.Transaction.Abstractions.IActor;
 using Vertex.Transaction.Events.TxUnit;
@@ -16,35 +17,65 @@ namespace Vertex.Transaction.Actor
 {
     public abstract class DTxUnitActor<PrimaryKey, TRequest, TResponse> :
         ReentryActor<PrimaryKey, TxUnitSnapshot<TRequest>>,
-        IDTxUnitActor<TRequest, TResponse>
+        IDTxUnitActor<TRequest, TResponse>,
+        IRemindable
         where TRequest : class, new()
     {
         private readonly IdGenerator idGen = new IdGenerator(0);
-        private static AsyncLocal<DTxCommit<TRequest>> currentCommit = new AsyncLocal<DTxCommit<TRequest>>();
+        private readonly static AsyncLocal<DTxCommit<TRequest>> currentCommit = new AsyncLocal<DTxCommit<TRequest>>();
+        private const string reminderName = "monitor";
+        private IDisposable timer;
         public override async Task OnActivateAsync()
         {
             await base.OnActivateAsync();
-            this.RegisterTimer(
+            timer = this.RegisterTimer(
                 async state =>
                 {
                     foreach (var commit in this.Snapshot.Data.RequestDict.Values.Where(o => (DateTimeOffset.UtcNow.ToUnixTimeSeconds() - o.Timestamp) >= 60).ToList())
                     {
-                        var actors = this.EffectActors(commit.Data);
-                        currentCommit.Value = commit;
-                        if (commit.Status == TransactionStatus.WaitingCommit)
+                        try
                         {
-                            await Rollback(actors);
+                            var actors = this.EffectActors(commit.Data);
+                            currentCommit.Value = commit;
+                            if (commit.Status == TransactionStatus.WaitingCommit)
+                            {
+                                await Rollback(actors);
+                            }
+                            else if (commit.Status == TransactionStatus.Commited)
+                            {
+                                await Finish(actors);
+                            }
                         }
-                        else if (commit.Status == TransactionStatus.Commited)
+                        catch (Exception ex)
                         {
-                            await Finish(actors);
+                            this.Logger.LogCritical(ex, this.Serializer.Serialize(commit));
                         }
                     }
                 }, null,
                 new TimeSpan(0, 0, 5),
                 new TimeSpan(0, 0, 30));
         }
-
+        public override async Task OnDeactivateAsync()
+        {
+            if (this.Snapshot.Data.RequestDict.Count > 0)
+            {
+                await RegisterOrUpdateReminder(reminderName, new TimeSpan(0, 3, 0), new TimeSpan(0, 5, 0));
+            }
+            else
+            {
+                var reminder = await GetReminder(reminderName);
+                if (reminder != default)
+                {
+                    await UnregisterReminder(reminder);
+                }
+            }
+            timer.Dispose();
+            await base.OnDeactivateAsync();
+        }
+        public Task ReceiveReminder(string reminderName, TickStatus status)
+        {
+            return Task.CompletedTask;
+        }
         protected async Task Commit()
         {
             var actors = this.EffectActors(currentCommit.Value.Data);
@@ -57,7 +88,7 @@ namespace Vertex.Transaction.Actor
             }
             catch (Exception ex)
             {
-                this.Logger.LogCritical(ex, ex.Message);
+                this.Logger.LogCritical(ex, this.Serializer.Serialize(commit));
                 throw;
             }
         }
@@ -76,7 +107,7 @@ namespace Vertex.Transaction.Actor
                 Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
             };
             RequestContext.Set(RequestContextKeys.txIdKey, currentCommit.Value.TxId);
-            RequestContext.Set(ActorConsts.eventFlowIdKey, FlowId(request));
+            RequestContext.Set(RuntimeConsts.EventFlowIdKey, FlowId(request));
             return await this.Work(request);
         }
         public abstract string FlowId(TRequest request);

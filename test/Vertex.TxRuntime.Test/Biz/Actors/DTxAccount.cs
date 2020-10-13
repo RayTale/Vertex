@@ -40,6 +40,15 @@ namespace Vertex.TxRuntime.Test.Biz.Actors
                 Amount = amount,
                 Balance = Snapshot.Data.Balance + amount
             };
+            await TxRaiseEvent(evt, flowId);
+        }
+        public async Task NoTxTopUp(decimal amount, string flowId)
+        {
+            var evt = new TopupEvent
+            {
+                Amount = amount,
+                Balance = Snapshot.Data.Balance + amount
+            };
             await RaiseEvent(evt, flowId);
         }
         public Task<bool> Commit_Test()

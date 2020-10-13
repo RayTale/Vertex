@@ -8,7 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Vertex.Abstractions.Event;
 using Vertex.Storage.Linq2db.Db;
-using Vertex.Storage.Linq2db.Entitys;
+using Vertex.Storage.Linq2db.Entities;
 using Vertex.Transaction.Abstractions.Storage;
 using Vertex.Utils.Channels;
 

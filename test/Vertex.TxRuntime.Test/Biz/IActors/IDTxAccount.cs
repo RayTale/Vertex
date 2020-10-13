@@ -14,6 +14,7 @@ namespace Vertex.TxRuntime.Test.Biz.IActors
         Task<SnapshotUnit<long, AccountSnapshot>> GetBackupSnapshot();
         ValueTask SetOptions(VertexDtxOptions txActorOptions);
         Task TopUp(decimal amount, string flowId);
+        Task NoTxTopUp(decimal amount, string flowId);
         Task<bool> Commit_Test();
         Task Finish_Test();
         Task Rollbakc_Test();

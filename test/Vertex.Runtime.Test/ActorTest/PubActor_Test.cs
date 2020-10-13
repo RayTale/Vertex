@@ -211,7 +211,7 @@ namespace Vertex.Runtime.Test.ActorTest
             });
             Assert.True(topupEx is ArgumentNullException);
 
-            RequestContext.Set(ActorConsts.eventFlowIdKey, Guid.NewGuid().ToString());
+            RequestContext.Set(RuntimeConsts.EventFlowIdKey, Guid.NewGuid().ToString());
             var result = await accountActor.TopUp(topupAmount);
             Assert.True(result);
         }

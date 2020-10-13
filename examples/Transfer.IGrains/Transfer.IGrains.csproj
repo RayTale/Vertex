@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Vertex.Abstractions\Vertex.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Vertex.Transaction.Abstractions\Vertex.Transaction.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

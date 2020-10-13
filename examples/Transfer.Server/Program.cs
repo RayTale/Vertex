@@ -12,6 +12,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Transfer.Grains;
 using Transfer.Grains.Common;
+using Transfer.IGrains.DTx;
 using Vertex.Runtime;
 using Vertex.Runtime.InnerService;
 using Vertex.Storage.Linq2db;
@@ -20,6 +21,7 @@ using Vertex.Stream.InMemory;
 using Vertex.Stream.InMemory.Grains;
 using Vertex.Stream.Kafka;
 using Vertex.Stream.RabbitMQ;
+using Vertex.Transaction;
 
 namespace Transfer.Server
 {
@@ -54,6 +56,7 @@ namespace Transfer.Server
                 .ConfigureServices(serviceCollection =>
                 {
                     serviceCollection.AddVertex();
+                    serviceCollection.AddTxUnitHandler<long, TransferRequest>();
                     serviceCollection.AddLinq2DbStorage(config =>
                     {
                         var memorySQLiteConnection = new SqliteConnection("Data Source=InMemorySample;Mode=Memory;Cache=Shared");

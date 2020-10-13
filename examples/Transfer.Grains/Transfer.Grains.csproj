@@ -15,6 +15,7 @@
     <ProjectReference Include="..\..\src\Storage\Vertex.Storage.Linq2db\Vertex.Storage.Linq2db.csproj" />
     <ProjectReference Include="..\..\src\Stream\Vertex.Stream.Common\Vertex.Stream.Common.csproj" />
     <ProjectReference Include="..\..\src\Vertex.Runtime\Vertex.Runtime.csproj" />
+    <ProjectReference Include="..\..\src\Vertex.Transaction\Vertex.Transaction.csproj" />
     <ProjectReference Include="..\Transfer.IGrains\Transfer.IGrains.csproj" />
   </ItemGroup>
 

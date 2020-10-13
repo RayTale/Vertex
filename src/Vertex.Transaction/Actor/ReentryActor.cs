@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Vertex.Abstractions.Snapshot;
-using Vertex.Runtime.Actor;
+using Vertex.Runtime;
 using Vertex.Transaction.Abstractions.Snapshot;
 using Vertex.Transaction.Events;
 using Vertex.Utils.Channels;
@@ -39,7 +39,7 @@ namespace Vertex.Transaction.Actor
         {
             if (string.IsNullOrEmpty(flowId))
             {
-                flowId = RequestContext.Get(ActorConsts.eventFlowIdKey) as string;
+                flowId = RequestContext.Get(RuntimeConsts.EventFlowIdKey) as string;
                 if (string.IsNullOrEmpty(flowId))
                     throw new ArgumentNullException(nameof(flowId));
             }

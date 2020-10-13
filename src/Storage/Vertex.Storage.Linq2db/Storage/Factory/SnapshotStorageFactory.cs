@@ -8,7 +8,7 @@ using Vertex.Abstractions.Actor;
 using Vertex.Abstractions.Storage;
 using Vertex.Storage.Linq2db.Core;
 using Vertex.Storage.Linq2db.Db;
-using Vertex.Storage.Linq2db.Entitys;
+using Vertex.Storage.Linq2db.Entities;
 
 namespace Vertex.Storage.Linq2db.Storage
 {

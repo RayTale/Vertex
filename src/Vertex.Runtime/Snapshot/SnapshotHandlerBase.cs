@@ -15,7 +15,7 @@ namespace Vertex.Runtime.Snapshot
     {
         private readonly Action<object, T, IEvent, EventMeta> handlerInvokeFunc;
         private readonly EventDiscardAttribute eventDiscardAttribute;
-        private readonly StrictHandleAttributer eventStrictAttributer;
+        private readonly StrictHandleAttribute eventStrictAttributer;
 
         public SnapshotHandlerBase()
         {
@@ -29,10 +29,10 @@ namespace Vertex.Runtime.Snapshot
             {
                 this.eventDiscardAttribute = default;
             }
-            var handlerStrictAttributes = thisType.GetCustomAttributes(typeof(StrictHandleAttributer), false);
+            var handlerStrictAttributes = thisType.GetCustomAttributes(typeof(StrictHandleAttribute), false);
             if (handlerStrictAttributes.Length > 0)
             {
-                eventStrictAttributer = (StrictHandleAttributer)handlerStrictAttributes[0];
+                eventStrictAttributer = (StrictHandleAttribute)handlerStrictAttributes[0];
             }
             else
             {

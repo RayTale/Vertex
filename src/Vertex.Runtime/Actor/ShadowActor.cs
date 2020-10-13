@@ -17,6 +17,7 @@ using Vertex.Runtime.Exceptions;
 using Vertex.Runtime.Options;
 using Vertext.Abstractions.Event;
 using Orleans.Runtime;
+using Microsoft.Extensions.Options;
 
 namespace Vertex.Runtime.Actor
 {
@@ -50,7 +51,7 @@ namespace Vertex.Runtime.Actor
         /// <returns></returns>
         protected virtual async ValueTask DependencyInjection()
         {
-            this.VertexOptions = this.ServiceProvider.GetOptionsByName<ShadowActorOptions>(ActorType.FullName);
+            this.VertexOptions = this.ServiceProvider.GetService<IOptionsSnapshot<ShadowActorOptions>>().Get(this.ActorType.FullName);
             this.Serializer = this.ServiceProvider.GetService<ISerializer>();
             this.EventTypeContainer = this.ServiceProvider.GetService<IEventTypeContainer>();
             this.Logger = (ILogger)this.ServiceProvider.GetService(typeof(ILogger<>).MakeGenericType(this.ActorType));
@@ -214,7 +215,7 @@ namespace Vertex.Runtime.Actor
         {
             try
             {
-                RequestContext.Set(ActorConsts.eventFlowIdKey, eventUnit.Meta.FlowId);
+                RequestContext.Set(RuntimeConsts.EventFlowIdKey, eventUnit.Meta.FlowId);
                 this.SnapshotHandler.Apply(this.Snapshot, eventUnit);
                 await this.OnEventDelivered(eventUnit);
             }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Orleans;
+using Microsoft.Extensions.Options;
 using Orleans.Runtime;
 using System;
 using System.Collections.Generic;
@@ -29,7 +29,7 @@ namespace Vertex.Transaction.Actor
         protected long ActivateTxEventVersion { get; private set; }
         protected async override ValueTask DependencyInjection()
         {
-            this.DtxOptions = this.ServiceProvider.GetOptionsByName<VertexDtxOptions>(this.ActorType.FullName);
+            this.DtxOptions = this.ServiceProvider.GetService<IOptionsSnapshot<VertexDtxOptions>>().Get(this.ActorType.FullName);
             var txEventStorageFactory = this.ServiceProvider.GetService<ITxEventStorageFactory>();
             this.TxEventStorage = await txEventStorageFactory.Create(this);
             await base.DependencyInjection();

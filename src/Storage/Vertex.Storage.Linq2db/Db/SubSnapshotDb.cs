@@ -1,6 +1,6 @@
 ﻿using LinqToDB;
 using LinqToDB.Data;
-using Vertex.Storage.Linq2db.Entitys;
+using Vertex.Storage.Linq2db.Entities;
 
 namespace Vertex.Storage.Linq2db.Db
 {

@@ -39,24 +39,25 @@ namespace Vertex.Protocol
                 var eventTypeLength = BitConverter.ToUInt16(bytesSpan.Slice(bytesHeadLength, sizeof(ushort)));
                 var actorIdBytesLength = BitConverter.ToUInt16(bytesSpan.Slice(bytesHeadLength + sizeof(ushort), sizeof(ushort)));
                 var skipLength = bytesHeadLength + 3 * sizeof(ushort) + sizeof(int);
-                if (idType == ActorIdType.Long)
+
+                switch (idType)
                 {
-                    primaryKey = BitConverter.ToInt64(bytesSpan.Slice(skipLength + eventTypeLength, actorIdBytesLength));
-                    return true;
-                }
-                else if (idType == ActorIdType.String)
-                {
-                    primaryKey = Encoding.UTF8.GetString(bytesSpan.Slice(skipLength + eventTypeLength, actorIdBytesLength));
-                    return true;
-                }
-                else if (idType == ActorIdType.Guid)
-                {
-                    primaryKey = new Guid(Encoding.UTF8.GetString(bytesSpan.Slice(skipLength + eventTypeLength, actorIdBytesLength)));
-                    return true;
-                }
-                else
-                {
-                    throw new NotSupportedException(bytes[1].ToString());
+                    case ActorIdType.Long:
+                        {
+                            primaryKey = BitConverter.ToInt64(bytesSpan.Slice(skipLength + eventTypeLength, actorIdBytesLength));
+                            return true;
+                        };
+                    case ActorIdType.String:
+                        {
+                            primaryKey = Encoding.UTF8.GetString(bytesSpan.Slice(skipLength + eventTypeLength, actorIdBytesLength));
+                            return true;
+                        };
+                    case ActorIdType.Guid:
+                        {
+                            primaryKey = new Guid(Encoding.UTF8.GetString(bytesSpan.Slice(skipLength + eventTypeLength, actorIdBytesLength)));
+                            return true;
+                        };
+                    default: throw new NotSupportedException(bytes[1].ToString());
                 }
             }
 

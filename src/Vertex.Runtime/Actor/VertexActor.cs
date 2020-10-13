@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Orleans;
+using Microsoft.Extensions.Options;
+using Orleans.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -8,9 +9,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Vertex.Abstractions.Actor;
 using Vertex.Abstractions.Event;
 using Vertex.Abstractions.EventStream;
-using Vertex.Abstractions.Actor;
 using Vertex.Abstractions.Serialization;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Abstractions.Storage;
@@ -19,7 +20,6 @@ using Vertex.Runtime.Event;
 using Vertex.Runtime.Exceptions;
 using Vertex.Runtime.Options;
 using Vertext.Abstractions.Event;
-using Orleans.Runtime;
 
 namespace Vertex.Runtime.Actor
 {
@@ -70,8 +70,8 @@ namespace Vertex.Runtime.Actor
         /// <returns></returns>
         protected virtual async ValueTask DependencyInjection()
         {
-            this.VertexOptions = this.ServiceProvider.GetOptionsByName<ActorOptions>(this.ActorType.FullName);
-            this.ArchiveOptions = this.ServiceProvider.GetOptionsByName<ArchiveOptions>(this.ActorType.FullName);
+            this.VertexOptions = this.ServiceProvider.GetService<IOptionsSnapshot<ActorOptions>>().Get(this.ActorType.FullName);
+            this.ArchiveOptions = this.ServiceProvider.GetService<IOptionsSnapshot<ArchiveOptions>>().Get(this.ActorType.FullName);
             this.Logger = (ILogger)this.ServiceProvider.GetService(typeof(ILogger<>).MakeGenericType(this.ActorType));
             this.Serializer = this.ServiceProvider.GetService<ISerializer>();
             this.EventTypeContainer = this.ServiceProvider.GetService<IEventTypeContainer>();
@@ -266,7 +266,7 @@ namespace Vertex.Runtime.Actor
         {
             if (string.IsNullOrEmpty(flowId))
             {
-                flowId = RequestContext.Get(ActorConsts.eventFlowIdKey) as string;
+                flowId = RequestContext.Get(RuntimeConsts.EventFlowIdKey) as string;
                 if (string.IsNullOrEmpty(flowId))
                     throw new ArgumentNullException(nameof(flowId));
             }
@@ -371,7 +371,7 @@ namespace Vertex.Runtime.Actor
             var (can, endStartTime) = CanArchive();
             if (can)
             {
-                return Archive(endStartTime);
+                return new ValueTask(Archive(endStartTime));
             }
             return ValueTask.CompletedTask;
         }
@@ -390,7 +390,7 @@ namespace Vertex.Runtime.Actor
             return (false, 0);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected async ValueTask Archive(long endTimestamp)
+        protected async Task Archive(long endTimestamp)
         {
             var takes = 0;
             while (true)

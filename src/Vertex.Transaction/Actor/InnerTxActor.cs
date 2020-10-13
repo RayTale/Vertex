@@ -1,5 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
-using Orleans;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Orleans.Runtime;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Vertex.Abstractions.Snapshot;
+using Vertex.Runtime;
 using Vertex.Runtime.Actor;
 using Vertex.Transaction.Abstractions.Snapshot;
 using Vertex.Transaction.Events;
@@ -38,7 +40,7 @@ namespace Vertex.Transaction.Actor
         #region Activate
         protected override ValueTask DependencyInjection()
         {
-            this.VertexTxOptions = this.ServiceProvider.GetOptionsByName<VertexTxOptions>(this.ActorType.FullName);
+            this.VertexTxOptions = this.ServiceProvider.GetService<IOptionsSnapshot<VertexTxOptions>>().Get(this.ActorType.FullName);
             return base.DependencyInjection();
         }
         protected override async Task RecoverySnapshot()
@@ -263,7 +265,7 @@ namespace Vertex.Transaction.Actor
         {
             if (string.IsNullOrEmpty(flowId))
             {
-                flowId = RequestContext.Get(ActorConsts.eventFlowIdKey) as string;
+                flowId = RequestContext.Get(RuntimeConsts.EventFlowIdKey) as string;
                 if (string.IsNullOrEmpty(flowId))
                     throw new ArgumentNullException(nameof(flowId));
             }

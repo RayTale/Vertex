@@ -9,14 +9,14 @@ using Vertex.Abstractions.Snapshot;
 using Vertex.Abstractions.Storage;
 using Vertex.Storage.EFCore.Storage;
 using Vertex.Storage.Linq2db.Db;
-using Vertex.Storage.Linq2db.Entitys;
+using Vertex.Storage.Linq2db.Entities;
 
 namespace Vertex.Storage.Linq2db.Storage
 {
     public class SnapshotStorage<PrimaryKey> : ISnapshotStorage<PrimaryKey>
     {
-        readonly DbFactory dbFactory;
-        readonly string optionName, tableName;
+        private readonly DbFactory dbFactory;
+        private readonly string optionName, tableName;
         private readonly ILogger<EventStorage<PrimaryKey>> logger;
         private readonly ISerializer serializer;
         public SnapshotStorage(IServiceProvider serviceProvider, DbFactory dbFactory, string optionName, string tableName)

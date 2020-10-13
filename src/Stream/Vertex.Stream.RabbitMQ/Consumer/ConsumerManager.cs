@@ -16,19 +16,22 @@ namespace Vertex.Stream.RabbitMQ.Consumer
 {
     public class ConsumerManager : IHostedService, IDisposable
     {
-        private readonly ConcurrentDictionary<string, ConsumerRunner> consumerRunners = new ConcurrentDictionary<string, ConsumerRunner>();
         private readonly ILogger<ConsumerManager> logger;
         private readonly IServiceProvider provider;
         private readonly IGrainFactory grainFactory;
         private readonly List<QueueInfo> queues;
+        private readonly ConcurrentDictionary<string, ConsumerRunner> consumerRunners = new ConcurrentDictionary<string, ConsumerRunner>();
+        private readonly ConcurrentDictionary<string, long> runners = new ConcurrentDictionary<string, long>();
+        private Timer heathCheckTimer, distributedMonitorTime, distributedHoldTimer;
+
         private const int HoldTime = 20 * 1000;
         private const int MonitTime = 60 * 2 * 1000;
         private const int checkTime = 10 * 1000;
 
         private const int lockHoldingSeconds = 60;
-        private int distributedMonitorTimeLock = 0;
-        private int distributedHoldTimerLock = 0;
-        private int heathCheckTimerLock = 0;
+        private int distributedMonitorTimeLock;
+        private int distributedHoldTimerLock;
+        private int heathCheckTimerLock;
 
         public ConsumerManager(
             ILogger<ConsumerManager> logger,
@@ -71,13 +74,47 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                 }
             }
         }
-        private ConcurrentDictionary<string, long> Runners { get; } = new ConcurrentDictionary<string, long>();
-        private Timer HeathCheckTimer { get; set; }
 
-        private Timer DistributedMonitorTime { get; set; }
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            if (this.logger.IsEnabled(LogLevel.Debug))
+            {
+                this.logger.LogInformation("EventBus Background Service is starting.");
+            }
 
-        private Timer DistributedHoldTimer { get; set; }
+            this.distributedMonitorTime = new Timer(state => this.DistributedStart().Wait(), null, 1000, MonitTime);
+            this.distributedHoldTimer = new Timer(state => this.DistributedHold().Wait(), null, HoldTime, HoldTime);
+            this.heathCheckTimer = new Timer(state => { this.HeathCheck().Wait(); }, null, checkTime, checkTime);
+            return Task.CompletedTask;
+        }
 
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            if (this.logger.IsEnabled(LogLevel.Information))
+            {
+                this.logger.LogInformation("EventBus Background Service is stopping.");
+            }
+
+            this.Dispose();
+            return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            if (this.logger.IsEnabled(LogLevel.Information))
+            {
+                this.logger.LogInformation("EventBus Background Service is disposing.");
+            }
+
+            foreach (var runner in this.consumerRunners.Values)
+            {
+                runner.Close();
+            }
+
+            this.distributedMonitorTime?.Dispose();
+            this.distributedHoldTimer?.Dispose();
+            this.heathCheckTimer?.Dispose();
+        }
         private async Task DistributedStart()
         {
             try
@@ -87,13 +124,13 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                     foreach (var queue in this.queues)
                     {
                         var key = queue.ToString();
-                        if (!this.Runners.ContainsKey(key))
+                        if (!this.runners.ContainsKey(key))
                         {
-                            var weight = 100000 - this.Runners.Count;
+                            var weight = 100000 - this.runners.Count;
                             var (isOk, lockId, expectMillisecondDelay) = await this.grainFactory.GetGrain<IWeightHoldLockActor>(key).Lock(weight, lockHoldingSeconds);
                             if (isOk)
                             {
-                                if (this.Runners.TryAdd(key, lockId))
+                                if (this.runners.TryAdd(key, lockId))
                                 {
                                     var runner = new ConsumerRunner(this.provider, queue);
                                     this.consumerRunners.TryAdd(key, runner);
@@ -129,9 +166,9 @@ namespace Vertex.Stream.RabbitMQ.Consumer
 
                 if (Interlocked.CompareExchange(ref this.distributedHoldTimerLock, 1, 0) == 0)
                 {
-                    foreach (var lockKV in this.Runners)
+                    foreach (var lockKV in this.runners)
                     {
-                        if (this.Runners.TryGetValue(lockKV.Key, out var lockId))
+                        if (this.runners.TryGetValue(lockKV.Key, out var lockId))
                         {
                             var holdResult = await this.grainFactory.GetGrain<IWeightHoldLockActor>(lockKV.Key).Hold(lockId, lockHoldingSeconds);
                             if (!holdResult)
@@ -141,7 +178,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                                     runner.Close();
                                 }
 
-                                this.Runners.TryRemove(lockKV.Key, out var _);
+                                this.runners.TryRemove(lockKV.Key, out var _);
                             }
                         }
                     }
@@ -176,47 +213,6 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                 this.logger.LogError(exception.InnerException ?? exception, nameof(this.HeathCheck));
                 Interlocked.Exchange(ref this.heathCheckTimerLock, 0);
             }
-        }
-
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            if (this.logger.IsEnabled(LogLevel.Debug))
-            {
-                this.logger.LogInformation("EventBus Background Service is starting.");
-            }
-
-            this.DistributedMonitorTime = new Timer(state => this.DistributedStart().Wait(), null, 1000, MonitTime);
-            this.DistributedHoldTimer = new Timer(state => this.DistributedHold().Wait(), null, HoldTime, HoldTime);
-            this.HeathCheckTimer = new Timer(state => { this.HeathCheck().Wait(); }, null, checkTime, checkTime);
-            return Task.CompletedTask;
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            if (this.logger.IsEnabled(LogLevel.Information))
-            {
-                this.logger.LogInformation("EventBus Background Service is stopping.");
-            }
-
-            this.Dispose();
-            return Task.CompletedTask;
-        }
-
-        public void Dispose()
-        {
-            if (this.logger.IsEnabled(LogLevel.Information))
-            {
-                this.logger.LogInformation("EventBus Background Service is disposing.");
-            }
-
-            foreach (var runner in this.consumerRunners.Values)
-            {
-                runner.Close();
-            }
-
-            this.DistributedMonitorTime?.Dispose();
-            this.DistributedHoldTimer?.Dispose();
-            this.HeathCheckTimer?.Dispose();
         }
     }
 }

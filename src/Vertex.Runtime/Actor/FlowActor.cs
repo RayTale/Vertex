@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Orleans;
 using Orleans.Concurrency;
 using Orleans.Runtime;
@@ -32,7 +33,7 @@ namespace Vertex.Runtime.Actor
     {
         private static readonly ConcurrentDictionary<Type, Func<object, IEvent, EventMeta, Task>> grainHandlerDict = new ConcurrentDictionary<Type, Func<object, IEvent, EventMeta, Task>>();
         private static readonly ConcurrentDictionary<Type, EventDiscardAttribute> eventDiscardAttributeDict = new ConcurrentDictionary<Type, EventDiscardAttribute>();
-        private static readonly ConcurrentDictionary<Type, StrictHandleAttributer> eventStrictAttributerAttributeDict = new ConcurrentDictionary<Type, StrictHandleAttributer>();
+        private static readonly ConcurrentDictionary<Type, StrictHandleAttribute> eventStrictAttributerAttributeDict = new ConcurrentDictionary<Type, StrictHandleAttribute>();
         private readonly Func<object, IEvent, EventMeta, Task> handlerInvokeFunc;
         private readonly EventDiscardAttribute discardAttribute;
 
@@ -53,10 +54,10 @@ namespace Vertex.Runtime.Actor
             });
             var strictHandleAttributer = eventStrictAttributerAttributeDict.GetOrAdd(this.ActorType, type =>
             {
-                var handlerAttributes = this.ActorType.GetCustomAttributes(typeof(StrictHandleAttributer), false);
+                var handlerAttributes = this.ActorType.GetCustomAttributes(typeof(StrictHandleAttribute), false);
                 if (handlerAttributes.Length > 0)
                 {
-                    return (StrictHandleAttributer)handlerAttributes[0];
+                    return (StrictHandleAttribute)handlerAttributes[0];
                 }
                 else
                 {
@@ -320,7 +321,7 @@ namespace Vertex.Runtime.Actor
         /// <returns></returns>
         protected virtual async ValueTask DependencyInjection()
         {
-            this.VertexOptions = this.ServiceProvider.GetOptionsByName<SubActorOptions>(ActorType.FullName);
+            this.VertexOptions = this.ServiceProvider.GetService<IOptionsSnapshot<SubActorOptions>>().Get(this.ActorType.FullName);
             this.Serializer = this.ServiceProvider.GetService<ISerializer>();
             this.EventTypeContainer = this.ServiceProvider.GetService<IEventTypeContainer>();
             this.Logger = (ILogger)this.ServiceProvider.GetService(typeof(ILogger<>).MakeGenericType(this.ActorType));
@@ -618,7 +619,7 @@ namespace Vertex.Runtime.Actor
         {
             try
             {
-                RequestContext.Set(ActorConsts.eventFlowIdKey, eventUnit.Meta.FlowId);
+                RequestContext.Set(RuntimeConsts.EventFlowIdKey, eventUnit.Meta.FlowId);
                 return this.OnEventDelivered(eventUnit);
             }
             catch (Exception ex)

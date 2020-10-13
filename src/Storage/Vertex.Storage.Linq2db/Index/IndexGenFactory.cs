@@ -10,12 +10,12 @@ namespace Vertex.Storage.Linq2db.Index
     {
         public static IIndexGenerator GetGenerator(this DataConnection conn)
         {
-            return conn.DataProvider.ConnectionNamespace switch
+            return conn.DataProvider.Name switch
             {
-                ConnectionNamespace.PostgreSQL => new PGIndexGenerator(),
-                ConnectionNamespace.MySql => new MySqlIndexGenerator(),
-                ConnectionNamespace.SQLite => new SQLiteIndexGenerator(),
-                _ => throw new ArgumentOutOfRangeException(conn.DataProvider.ConnectionNamespace),
+                DbProviderName.PostgreSQL => new PGIndexGenerator(),
+                DbProviderName.MySql => new MySqlIndexGenerator(),
+                DbProviderName.SQLite or DbProviderName.MSSQLite => new SQLiteIndexGenerator(),
+                _ => throw new NotSupportedException(conn.DataProvider.Name),
             };
         }
     }
