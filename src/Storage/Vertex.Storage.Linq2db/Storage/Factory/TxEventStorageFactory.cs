@@ -48,8 +48,8 @@ namespace Vertex.Storage.Linq2db.Storage
                  await db.CreateTableIfNotExists<EventEntity<PrimaryKey>>(this.grainFactory, key, tableName, async () =>
                  {
                      var indexGenerator = db.GetGenerator();
-                     await indexGenerator.CreateUniqueIndexIfNotExists(db, tableName, $"{tableName}_event_unique", nameof(EventEntity<PrimaryKey>.ActorId), nameof(EventEntity<PrimaryKey>.Version));
-                     await indexGenerator.CreateUniqueIndexIfNotExists(db, tableName, $"{tableName}_event_flow_unique", nameof(EventEntity<PrimaryKey>.ActorId), nameof(EventEntity<PrimaryKey>.Name), nameof(EventEntity<PrimaryKey>.FlowId));
+                     await indexGenerator.CreateUniqueIndexIfNotExists(db, tableName, $"{tableName}_event_unique", nameof(EventEntity<PrimaryKey>.ActorId).ToLower(), nameof(EventEntity<PrimaryKey>.Version).ToLower());
+                     await indexGenerator.CreateUniqueIndexIfNotExists(db, tableName, $"{tableName}_event_flow_unique", nameof(EventEntity<PrimaryKey>.ActorId).ToLower(), nameof(EventEntity<PrimaryKey>.Name).ToLower(), nameof(EventEntity<PrimaryKey>.FlowId).ToLower());
                  });
                  return new TxEventStorage<PrimaryKey>(serviceProvider, dbFactory, attribute.OptionName, tableName);
              });

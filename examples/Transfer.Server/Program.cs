@@ -59,28 +59,28 @@ namespace Transfer.Server
                     serviceCollection.AddTxUnitHandler<long, TransferRequest>();
                     serviceCollection.AddLinq2DbStorage(config =>
                     {
-                        var memorySQLiteConnection = new SqliteConnection("Data Source=InMemorySample;Mode=Memory;Cache=Shared");
-                        memorySQLiteConnection.Open();
-                        serviceCollection.AddSingleton(memorySQLiteConnection);
+                        //var memorySQLiteConnection = new SqliteConnection("Data Source=InMemorySample;Mode=Memory;Cache=Shared");
+                        //memorySQLiteConnection.Open();
+                        //serviceCollection.AddSingleton(memorySQLiteConnection);
                         config.Connections = new Vertex.Storage.Linq2db.Options.ConnectionOptions[] {
-                        //new Vertex.Storage.Linq2db.Options.ConnectionOptions
-                        //{
-                        //    Name = Consts.core_db_Name,
-                        //    ProviderName = "PostgreSQL",
-                        //    ConnectionString = "Server=localhost;Port=5432;Database=Vertex;User Id=postgres;Password=postgres;Pooling=true;MaxPoolSize=20;"
-                        //},
+                        new Vertex.Storage.Linq2db.Options.ConnectionOptions
+                        {
+                            Name = Consts.core_db_Name,
+                            ProviderName = "PostgreSQL",
+                            ConnectionString = "Server=localhost;Port=5432;Database=Vertex;User Id=postgres;Password=postgres;Pooling=true;MaxPoolSize=20;"
+                        },
                         //new Vertex.Storage.Linq2db.Options.ConnectionOptions
                         //{
                         //    Name = Consts.core_db_Name,
                         //    ProviderName = "MySql",
                         //    ConnectionString = "Server=localhost;Database=Vertex;UserId=root;Password=root;pooling=true;maxpoolsize=50;ConnectionLifeTime=30;"
                         //},
-                        new Vertex.Storage.Linq2db.Options.ConnectionOptions
-                        {
-                            Name = Consts.core_db_Name,
-                            ProviderName = "SQLite.MS",
-                            ConnectionString = "Data Source=InMemorySample;Mode=Memory;Cache=Shared"
-                        }
+                        //new Vertex.Storage.Linq2db.Options.ConnectionOptions
+                        //{
+                        //    Name = Consts.core_db_Name,
+                        //    ProviderName = "SQLite.MS",
+                        //    ConnectionString = "Data Source=InMemorySample;Mode=Memory;Cache=Shared"
+                        //}
                         };
                     }, new EventArchivePolicy("month", (name, time) => $"Vertex_Archive_{name}_{DateTimeOffset.FromUnixTimeSeconds(time).ToString("yyyyMM")}".ToLower(), table => table.StartsWith("Vertex_Archive".ToLower())));
                     //serviceCollection.AddRabbitMQStream(options =>
