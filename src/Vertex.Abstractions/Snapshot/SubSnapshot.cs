@@ -1,8 +1,8 @@
 ﻿namespace Vertex.Abstractions.Snapshot
 {
-    public record SubSnapshot<PrimaryKey>
+    public record SubSnapshot<TPrimaryKey>
     {
-        public PrimaryKey ActorId { get; set; }
+        public TPrimaryKey ActorId { get; set; }
 
         public long DoingVersion { get; set; }
 

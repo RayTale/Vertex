@@ -1,14 +1,14 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Orleans.Runtime;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Orleans.Runtime;
 using Vertex.Abstractions.Actor;
 using Vertex.Abstractions.Event;
 using Vertex.Abstractions.EventStream;
@@ -23,15 +23,14 @@ using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Actor
 {
-    public class VertexActor<PrimaryKey, T> : ActorBase<PrimaryKey>, IVertexActor
+    public class VertexActor<TPrimaryKey, T> : ActorBase<TPrimaryKey>, IVertexActor
          where T : ISnapshot, new()
     {
-        #region property
-
         /// <summary>
         /// The event version number of the snapshot
         /// </summary>
         protected long ActivateSnapshotVersion { get; private set; }
+
         protected ActorOptions VertexOptions { get; private set; }
 
         protected ArchiveOptions ArchiveOptions { get; private set; }
@@ -44,26 +43,25 @@ namespace Vertex.Runtime.Actor
 
         protected IEventTypeContainer EventTypeContainer { get; private set; }
 
-        protected SnapshotUnit<PrimaryKey, T> Snapshot { get; set; }
+        protected SnapshotUnit<TPrimaryKey, T> Snapshot { get; set; }
 
-        protected ISnapshotHandler<PrimaryKey, T> SnapshotHandler { get; private set; }
+        protected ISnapshotHandler<TPrimaryKey, T> SnapshotHandler { get; private set; }
 
         /// <summary>
         /// Archive storage
         /// </summary>
-        protected IEventArchive<PrimaryKey> EventArchive { get; private set; }
+        protected IEventArchive<TPrimaryKey> EventArchive { get; private set; }
 
         /// <summary>
         /// Event storage
         /// </summary>
-        protected IEventStorage<PrimaryKey> EventStorage { get; private set; }
+        protected IEventStorage<TPrimaryKey> EventStorage { get; private set; }
 
         /// <summary>
         /// State storage
         /// </summary>
-        protected ISnapshotStorage<PrimaryKey> SnapshotStorage { get; private set; }
-        #endregion
-        #region Activate
+        protected ISnapshotStorage<TPrimaryKey> SnapshotStorage { get; private set; }
+
         /// <summary>
         /// Unified method of dependency injection
         /// </summary>
@@ -75,7 +73,7 @@ namespace Vertex.Runtime.Actor
             this.Logger = (ILogger)this.ServiceProvider.GetService(typeof(ILogger<>).MakeGenericType(this.ActorType));
             this.Serializer = this.ServiceProvider.GetService<ISerializer>();
             this.EventTypeContainer = this.ServiceProvider.GetService<IEventTypeContainer>();
-            this.SnapshotHandler = this.ServiceProvider.GetService<ISnapshotHandler<PrimaryKey, T>>();
+            this.SnapshotHandler = this.ServiceProvider.GetService<ISnapshotHandler<TPrimaryKey, T>>();
             if (this.SnapshotHandler == default)
             {
                 throw new VertexEventHandlerException(this.ActorType);
@@ -89,19 +87,20 @@ namespace Vertex.Runtime.Actor
             var snapshotStorageFactory = this.ServiceProvider.GetService<ISnapshotStorageFactory>();
             this.SnapshotStorage = await snapshotStorageFactory.Create(this);
         }
+
         /// <summary>
         /// The method used to initialize is called when Grain is activated (overriding in subclasses is prohibited)
         /// </summary>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public override async Task OnActivateAsync()
         {
             await base.OnActivateAsync();
-            await DependencyInjection();
-            //Load snapshot
+            await this.DependencyInjection();
+
+            // Load snapshot
             await this.RecoverySnapshot();
             try
             {
-
                 if (this.Logger.IsEnabled(LogLevel.Trace))
                 {
                     this.Logger.LogTrace("Activation completed: {0}->{1}", this.ActorType.FullName, this.Serializer.Serialize(this.Snapshot));
@@ -113,6 +112,7 @@ namespace Vertex.Runtime.Actor
                 throw;
             }
         }
+
         protected virtual async Task RecoverySnapshot()
         {
             try
@@ -120,13 +120,13 @@ namespace Vertex.Runtime.Actor
                 await this.ReadSnapshotAsync();
                 while (!this.Snapshot.Meta.IsLatest)
                 {
-                    var documents = await EventStorage.GetList(this.ActorId, this.Snapshot.Meta.Version + 1, this.Snapshot.Meta.Version + this.VertexOptions.EventPageSize);
-                    var eventList = Convert(documents);
+                    var documents = await this.EventStorage.GetList(this.ActorId, this.Snapshot.Meta.Version + 1, this.Snapshot.Meta.Version + this.VertexOptions.EventPageSize);
+                    var eventList = this.Convert(documents);
                     foreach (var fullyEvent in eventList)
                     {
-                        this.Snapshot.Meta.IncrementDoingVersion(this.ActorType);//Mark the Version to be processed
+                        this.Snapshot.Meta.IncrementDoingVersion(this.ActorType); // Mark the Version to be processed
                         this.SnapshotHandler.Apply(this.Snapshot, fullyEvent);
-                        this.Snapshot.Meta.UpdateVersion(fullyEvent.Meta, this.ActorType);//Version of the update process
+                        this.Snapshot.Meta.UpdateVersion(fullyEvent.Meta, this.ActorType); // Version of the update process
                     }
 
                     if (eventList.Count < this.VertexOptions.EventPageSize)
@@ -134,7 +134,8 @@ namespace Vertex.Runtime.Actor
                         break;
                     }
                 }
-                //If the minimum snapshot save interval version number is met, the snapshot is saved once
+
+                // If the minimum snapshot save interval version number is met, the snapshot is saved once
                 if (this.Snapshot.Meta.Version - this.ActivateSnapshotVersion >= this.VertexOptions.MinSnapshotVersionInterval)
                 {
                     await this.SaveSnapshotAsync(true, true);
@@ -151,15 +152,16 @@ namespace Vertex.Runtime.Actor
                 throw;
             }
         }
+
         protected virtual async Task ReadSnapshotAsync()
         {
             try
             {
-                //Restore state from snapshot
+                // Restore state from snapshot
                 this.Snapshot = await this.SnapshotStorage.Get<T>(this.ActorId);
                 if (this.Snapshot is null)
                 {
-                    //New status
+                    // New status
                     await this.CreateSnapshot();
                 }
                 this.ActivateSnapshotVersion = this.Snapshot.Meta.Version;
@@ -174,6 +176,7 @@ namespace Vertex.Runtime.Actor
                 throw;
             }
         }
+
         protected async ValueTask SaveSnapshotAsync(bool force = false, bool isLatest = false)
         {
             if (this.Snapshot.Meta.Version != this.Snapshot.Meta.DoingVersion)
@@ -181,7 +184,7 @@ namespace Vertex.Runtime.Actor
                 throw new SnapshotException(this.Snapshot.Meta.ActorId.ToString(), this.ActorType, this.Snapshot.Meta.DoingVersion, this.Snapshot.Meta.Version);
             }
 
-            //Update the snapshot if the version number difference exceeds the setting
+            // Update the snapshot if the version number difference exceeds the setting
             if ((force && (this.Snapshot.Meta.Version > this.ActivateSnapshotVersion || this.Snapshot.Meta.IsLatest != isLatest)) ||
                 (this.Snapshot.Meta.Version - this.ActivateSnapshotVersion >= this.VertexOptions.SnapshotVersionInterval))
             {
@@ -211,15 +214,16 @@ namespace Vertex.Runtime.Actor
                 }
             }
         }
+
         /// <summary>
         /// Initialization state, must be implemented
         /// </summary>
         /// <returns></returns>
         protected virtual ValueTask CreateSnapshot()
         {
-            this.Snapshot = new SnapshotUnit<PrimaryKey, T>
+            this.Snapshot = new SnapshotUnit<TPrimaryKey, T>
             {
-                Meta = new SnapshotMeta<PrimaryKey>
+                Meta = new SnapshotMeta<TPrimaryKey>
                 {
                     ActorId = this.ActorId,
                     MinEventTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
@@ -228,13 +232,13 @@ namespace Vertex.Runtime.Actor
             };
             return ValueTask.CompletedTask;
         }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual ValueTask OnActivationCompleted() => ValueTask.CompletedTask;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual ValueTask OnStartSaveSnapshot() => ValueTask.CompletedTask;
-        #endregion
 
-        #region Deactive
         public override async Task OnDeactivateAsync()
         {
             try
@@ -244,7 +248,7 @@ namespace Vertex.Runtime.Actor
                     await this.SaveSnapshotAsync(true, true);
                     await this.OnDeactivated();
                 }
-                await Archive();
+                await this.Archive();
                 if (this.Logger.IsEnabled(LogLevel.Trace))
                 {
                     this.Logger.LogTrace("Deactivate completed: {0}->{1}", this.ActorType.FullName, this.Serializer.Serialize(this.Snapshot));
@@ -259,7 +263,6 @@ namespace Vertex.Runtime.Actor
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual ValueTask OnDeactivated() => ValueTask.CompletedTask;
-        #endregion
 
         #region RaiseEvent
         protected virtual async Task<bool> RaiseEvent(IEvent @event, string flowId = null)
@@ -268,11 +271,13 @@ namespace Vertex.Runtime.Actor
             {
                 flowId = RequestContext.Get(RuntimeConsts.EventFlowIdKey) as string;
                 if (string.IsNullOrEmpty(flowId))
+                {
                     throw new ArgumentNullException(nameof(flowId));
+                }
             }
             try
             {
-                var eventBox = new EventUnit<PrimaryKey>
+                var eventBox = new EventUnit<TPrimaryKey>
                 {
                     Event = @event,
                     Meta = new EventMeta
@@ -286,16 +291,19 @@ namespace Vertex.Runtime.Actor
 
                 await this.OnRaiseStart(eventBox);
 
-                this.Snapshot.Meta.IncrementDoingVersion(this.ActorType);//Mark the Version to be processed
+                this.Snapshot.Meta.IncrementDoingVersion(this.ActorType); // Mark the Version to be processed
                 var evtType = @event.GetType();
 
                 if (!this.EventTypeContainer.TryGet(evtType, out var eventName))
+                {
                     throw new NoNullAllowedException($"event name of {evtType.FullName}");
+                }
+
                 var evtBytes = this.Serializer.SerializeToUtf8Bytes(@event, evtType);
-                var appendResult = await this.EventStorage.Append(new EventDocument<PrimaryKey>
+                var appendResult = await this.EventStorage.Append(new EventDocument<TPrimaryKey>
                 {
                     FlowId = eventBox.Meta.FlowId,
-                    ActorId = ActorId,
+                    ActorId = this.ActorId,
                     Data = Encoding.UTF8.GetString(evtBytes),
                     Name = eventName,
                     Timestamp = eventBox.Meta.Timestamp,
@@ -305,13 +313,16 @@ namespace Vertex.Runtime.Actor
                 if (appendResult)
                 {
                     this.SnapshotHandler.Apply(this.Snapshot, eventBox);
-                    this.Snapshot.Meta.UpdateVersion(eventBox.Meta, this.ActorType);//Version of the update process
+                    this.Snapshot.Meta.UpdateVersion(eventBox.Meta, this.ActorType); // Version of the update process
                     await this.OnRaiseSuccess(eventBox, evtBytes);
                     await this.SaveSnapshotAsync();
                     using var baseBytes = eventBox.Meta.ConvertToBytes();
                     using var buffer = EventConverter.ConvertToBytes(new EventTransUnit(eventName, this.Snapshot.Meta.ActorId, baseBytes.AsSpan(), evtBytes));
                     if (this.EventStream != default)
+                    {
                         await this.EventStream.Next(buffer.ToArray());
+                    }
+
                     if (this.Logger.IsEnabled(LogLevel.Trace))
                     {
                         this.Logger.LogTrace("RaiseEvent completed: {0}->{1}->{2}", this.ActorType.FullName, this.Serializer.Serialize(eventBox), this.Serializer.Serialize(this.Snapshot));
@@ -326,7 +337,7 @@ namespace Vertex.Runtime.Actor
                         this.Logger.LogTrace("RaiseEvent failed: {0}->{1}->{2}", this.ActorType.FullName, this.Serializer.Serialize(eventBox), this.Serializer.Serialize(this.Snapshot));
                     }
 
-                    this.Snapshot.Meta.DecrementDoingVersion();//Restore the doing version
+                    this.Snapshot.Meta.DecrementDoingVersion(); // Restore the doing version
                     await this.OnRaiseFailed(eventBox);
 
                     return false;
@@ -335,14 +346,16 @@ namespace Vertex.Runtime.Actor
             catch (Exception ex)
             {
                 this.Logger.LogCritical(ex, "RaiseEvent failed: {0}->{1}", this.ActorType.FullName, this.Serializer.Serialize(this.Snapshot));
-                await this.RecoverySnapshot();//Restore state
-                //Errors may appear repeatedly, so update the previous snapshot to improve the restoration speed
+                await this.RecoverySnapshot(); // Restore state
+
+                // Errors may appear repeatedly, so update the previous snapshot to improve the restoration speed
                 await this.SaveSnapshotAsync(true);
 
                 throw;
             }
         }
-        protected virtual async ValueTask OnRaiseStart(EventUnit<PrimaryKey> @event)
+
+        protected virtual async ValueTask OnRaiseStart(EventUnit<TPrimaryKey> @event)
         {
             if (this.Snapshot.Meta.Version == 0)
             {
@@ -355,12 +368,13 @@ namespace Vertex.Runtime.Actor
                 this.Snapshot.Meta.IsLatest = false;
             }
         }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual ValueTask OnRaiseSuccess(EventUnit<PrimaryKey> eventUnit, byte[] eventBits) => Archive();
+        protected virtual ValueTask OnRaiseSuccess(EventUnit<TPrimaryKey> eventUnit, byte[] eventBits) => this.Archive();
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual ValueTask OnRaiseFailed(EventUnit<PrimaryKey> @event) => ValueTask.CompletedTask;
+        protected virtual ValueTask OnRaiseFailed(EventUnit<TPrimaryKey> @event) => ValueTask.CompletedTask;
         #endregion
-        #region Archive
 
         protected ValueTask Archive()
         {
@@ -368,55 +382,59 @@ namespace Vertex.Runtime.Actor
             {
                 throw new SnapshotException(this.Snapshot.Meta.ActorId.ToString(), this.ActorType, this.Snapshot.Meta.DoingVersion, this.Snapshot.Meta.Version);
             }
-            var (can, endStartTime) = CanArchive();
+            var (can, endStartTime) = this.CanArchive();
             if (can)
             {
-                return new ValueTask(Archive(endStartTime));
+                return new ValueTask(this.Archive(endStartTime));
             }
             return ValueTask.CompletedTask;
         }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected (bool can, long endTimestamp) CanArchive()
         {
             if (this.Snapshot.Meta.Version > this.Snapshot.Meta.MinEventVersion)
             {
                 var nowTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                var endTimestamp = nowTimestamp - ArchiveOptions.RetainSeconds;
-                if (endTimestamp >= (this.Snapshot.Meta.MinEventTimestamp + ArchiveOptions.MinIntervalSeconds))
+                var endTimestamp = nowTimestamp - this.ArchiveOptions.RetainSeconds;
+                if (endTimestamp >= (this.Snapshot.Meta.MinEventTimestamp + this.ArchiveOptions.MinIntervalSeconds))
                 {
                     return (true, endTimestamp);
                 }
             }
             return (false, 0);
         }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected async Task Archive(long endTimestamp)
         {
             var takes = 0;
             while (true)
             {
-                var events = await EventStorage.GetList(ActorId, endTimestamp, takes, ArchiveOptions.EventPageSize);
+                var events = await this.EventStorage.GetList(this.ActorId, endTimestamp, takes, this.ArchiveOptions.EventPageSize);
                 if (events.Count > 0)
                 {
                     await this.EventArchive.Arichive(events);
                     this.Snapshot.Meta.MinEventTimestamp = events.Max(o => o.Timestamp);
                     this.Snapshot.Meta.MinEventVersion += events.Count;
                 }
-                if (events.Count < ArchiveOptions.EventPageSize)
+                if (events.Count < this.ArchiveOptions.EventPageSize)
+                {
                     break;
+                }
+
                 takes += events.Count;
             }
             this.Snapshot.Meta.MinEventTimestamp = endTimestamp;
             var isLatest = this.Snapshot.Meta.Version - this.Snapshot.Meta.MinEventVersion == -1;
             await this.SaveSnapshotAsync(true, isLatest);
 
-            await EventStorage.DeletePrevious(ActorId, this.Snapshot.Meta.MinEventVersion);
+            await this.EventStorage.DeletePrevious(this.ActorId, this.Snapshot.Meta.MinEventVersion);
         }
 
-        #endregion
         public async Task<IList<EventDocumentDto>> GetEventDocuments(long startVersion, long endVersion)
         {
-            var results = endVersion >= this.Snapshot.Meta.MinEventVersion ? await EventStorage.GetList(this.ActorId, startVersion, endVersion) : new List<EventDocument<PrimaryKey>>();
+            var results = endVersion >= this.Snapshot.Meta.MinEventVersion ? await this.EventStorage.GetList(this.ActorId, startVersion, endVersion) : new List<EventDocument<TPrimaryKey>>();
             var capacity = endVersion - startVersion + 1;
             if (results.Count < capacity && (results.Count == 0 || results.Min(r => r.Version) != 1))
             {
@@ -424,7 +442,7 @@ namespace Vertex.Runtime.Actor
                 {
                     endVersion = results.Min(o => o.Version) - 1;
                 }
-                var archiveEvents = await EventArchive.GetList(this.ActorId, startVersion, endVersion);
+                var archiveEvents = await this.EventArchive.GetList(this.ActorId, startVersion, endVersion);
                 if (archiveEvents.Count > 0)
                 {
                     results.AddRange(archiveEvents);
@@ -440,16 +458,17 @@ namespace Vertex.Runtime.Actor
                 Timestamp = o.Timestamp
             }).ToList();
         }
-        protected IList<EventUnit<PrimaryKey>> Convert(IList<EventDocument<PrimaryKey>> documents)
+
+        protected IList<EventUnit<TPrimaryKey>> Convert(IList<EventDocument<TPrimaryKey>> documents)
         {
             return documents.Select(document =>
             {
-                if (!EventTypeContainer.TryGet(document.Name, out var type))
+                if (!this.EventTypeContainer.TryGet(document.Name, out var type))
                 {
                     throw new NoNullAllowedException($"event name of {document.Name}");
                 }
-                var data = Serializer.Deserialize(document.Data, type);
-                return new EventUnit<PrimaryKey>
+                var data = this.Serializer.Deserialize(document.Data, type);
+                return new EventUnit<TPrimaryKey>
                 {
                     ActorId = this.ActorId,
                     Event = data as IEvent,

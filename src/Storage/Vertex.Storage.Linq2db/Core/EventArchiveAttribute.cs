@@ -7,12 +7,15 @@ namespace Vertex.Storage.Linq2db.Core
     {
         public EventArchiveAttribute(string optionName, string name, string policy)
         {
-            Name = name;
-            OptionName = optionName;
-            Policy = policy;
+            this.Name = name;
+            this.OptionName = optionName;
+            this.Policy = policy;
         }
+
         public string Policy { get; set; }
+
         public string OptionName { get; set; }
+
         public string Name { get; set; }
     }
 }

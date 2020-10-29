@@ -1,8 +1,8 @@
-﻿using Orleans.Runtime;
-using Orleans.TestingHost;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Orleans.Runtime;
+using Orleans.TestingHost;
 using Vertex.Runtime.Actor;
 using Vertex.Runtime.Core;
 using Vertex.Runtime.Test.IActors;
@@ -13,15 +13,18 @@ namespace Vertex.Runtime.Test.ActorTest
     [Collection(ClusterCollection.Name)]
     public class PubActor_Test
     {
-        private readonly TestCluster _cluster;
+        private readonly TestCluster cluster;
+
         public PubActor_Test(ClusterFixture fixture)
         {
-            _cluster = fixture.Cluster;
+            this.cluster = fixture.Cluster;
         }
+
         /// <summary>
         /// 普通事件提交测试
         /// </summary>
-        /// <param name="count"></param>
+        /// <param name="count">测试次数</param>
+        /// <param name="id">账户id</param>
         /// <returns></returns>
         [Theory]
         [InlineData(100, 1)]
@@ -31,18 +34,14 @@ namespace Vertex.Runtime.Test.ActorTest
         public async Task RaiseEvent(int count, int id)
         {
             decimal topupAmount = 100;
-            var accountActor = _cluster.GrainFactory.GetGrain<IAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IAccount>(id);
             await Task.WhenAll(Enumerable.Range(0, count).Select(i => accountActor.TopUp(topupAmount, Guid.NewGuid().ToString())));
             var snapshot = await accountActor.GetSnapshot();
             Assert.Equal(snapshot.Data.Balance, topupAmount * count);
             Assert.Equal(snapshot.Meta.Version, count);
             Assert.Equal(snapshot.Meta.Version, snapshot.Meta.DoingVersion);
         }
-        /// <summary>
-        /// 幂等性测试
-        /// </summary>
-        /// <param name="count"></param>
-        /// <returns></returns>
+
         [Theory]
         [InlineData(100, 50)]
         [InlineData(500, 51)]
@@ -52,8 +51,9 @@ namespace Vertex.Runtime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, count).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IAccount>(id);
-            //相同的FlowId多次请求只会生效一次，幂等性保证
+            var accountActor = this.cluster.GrainFactory.GetGrain<IAccount>(id);
+
+            // 相同的FlowId多次请求只会生效一次，幂等性保证
             await Task.WhenAll(Enumerable.Range(0, count).Select(i => accountActor.TopUp(topupAmount, guids[i])));
             await Task.WhenAll(Enumerable.Range(0, count).Select(i => accountActor.TopUp(topupAmount, guids[i])));
 
@@ -62,6 +62,7 @@ namespace Vertex.Runtime.Test.ActorTest
             Assert.Equal(snapshot.Meta.Version, count);
             Assert.Equal(snapshot.Meta.Version, snapshot.Meta.DoingVersion);
         }
+
         [Theory]
         [InlineData(100, 100)]
         [InlineData(500, 101)]
@@ -71,7 +72,7 @@ namespace Vertex.Runtime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, count).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IAccount>(id);
 
             await Task.WhenAll(Enumerable.Range(0, count).Select(i => accountActor.TopUp(topupAmount, guids[i])));
 
@@ -86,6 +87,7 @@ namespace Vertex.Runtime.Test.ActorTest
             Assert.Equal(snapshot.Meta.Version, count);
             Assert.Equal(snapshot.Meta.Version, snapshot.Meta.DoingVersion);
         }
+
         [Theory]
         [InlineData(100, 200)]
         [InlineData(500, 201)]
@@ -95,7 +97,7 @@ namespace Vertex.Runtime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, count).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IAccount>(id);
 
             await Task.WhenAll(Enumerable.Range(0, count).Select(i => accountActor.TopUp(topupAmount, guids[i])));
 
@@ -107,7 +109,7 @@ namespace Vertex.Runtime.Test.ActorTest
             var actorOptions = await accountActor.GetOptions();
 
             var activateSnapshotVersion = await accountActor.GetActivateSnapshotVersion();
-            Assert.True(count - count % actorOptions.SnapshotVersionInterval == activateSnapshotVersion);
+            Assert.True(count - (count % actorOptions.SnapshotVersionInterval) == activateSnapshotVersion);
             var isLatest = (snapshot.Meta.Version - activateSnapshotVersion) > actorOptions.MinSnapshotVersionInterval;
             await accountActor.Deactivate_Test();
             snapshot = await accountActor.GetSnapshot();
@@ -122,6 +124,7 @@ namespace Vertex.Runtime.Test.ActorTest
             Assert.Equal(snapshot.Meta.Version, snapshot.Meta.DoingVersion);
             Assert.True(snapshot.Meta.IsLatest == isLatest);
         }
+
         [Theory]
         [InlineData(100, 300)]
         [InlineData(500, 301)]
@@ -131,7 +134,7 @@ namespace Vertex.Runtime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, count).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IAccount>(id);
 
             var (can, endTimestamp) = await accountActor.CanArchive_Test();
             Assert.False(can);
@@ -176,6 +179,7 @@ namespace Vertex.Runtime.Test.ActorTest
             Assert.True(documents.Count == 10);
             Assert.True(Enumerable.Range(1, 10).Sum() == documents.Sum(d => d.Version));
         }
+
         [Theory]
         [InlineData(400)]
         [InlineData(401)]
@@ -184,7 +188,7 @@ namespace Vertex.Runtime.Test.ActorTest
         public async Task EventHandler_Error(int id)
         {
             decimal topupAmount = 100;
-            var accountActor = _cluster.GrainFactory.GetGrain<IAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IAccount>(id);
             var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             {
                 await accountActor.HandlerError_Test();
@@ -196,6 +200,7 @@ namespace Vertex.Runtime.Test.ActorTest
             });
             Assert.True(topupEx is ArgumentException);
         }
+
         [Theory]
         [InlineData(500)]
         [InlineData(501)]
@@ -204,7 +209,7 @@ namespace Vertex.Runtime.Test.ActorTest
         public async Task FollowId(int id)
         {
             decimal topupAmount = 100;
-            var accountActor = _cluster.GrainFactory.GetGrain<IAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IAccount>(id);
             var topupEx = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
                 await accountActor.TopUp(topupAmount);

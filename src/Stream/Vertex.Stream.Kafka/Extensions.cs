@@ -1,6 +1,6 @@
-﻿using Confluent.Kafka;
+﻿using System;
+using Confluent.Kafka;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 using Vertex.Abstractions.EventStream;
 using Vertex.Stream.Common;
 using Vertex.Stream.Kafka.Consumer;

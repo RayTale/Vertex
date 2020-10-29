@@ -7,9 +7,9 @@ using Vertex.Transaction.Actor;
 
 namespace Transfer.Grains.DTx
 {
-    [EventStorage(Consts.core_db_Name, nameof(TransferDtxUnit), 3)]
-    [EventArchive(Consts.core_db_Name, nameof(TransferDtxUnit), "month")]
-    [SnapshotStorage(Consts.core_db_Name, nameof(TransferDtxUnit), 3)]
+    [EventStorage(Consts.CoreDbName, nameof(TransferDtxUnit), 3)]
+    [EventArchive(Consts.CoreDbName, nameof(TransferDtxUnit), "month")]
+    [SnapshotStorage(Consts.CoreDbName, nameof(TransferDtxUnit), 3)]
     [NoStream]
     public class TransferDtxUnit : DTxUnitActor<long, TransferRequest, bool>, ITransferDtxUnit
     {
@@ -19,31 +19,32 @@ namespace Transfer.Grains.DTx
         {
             try
             {
-                var result = await GrainFactory.GetGrain<IDTxAccount>(request.FromId).Transfer(request.ToId, request.Amount);
+                var result = await this.GrainFactory.GetGrain<IDTxAccount>(request.FromId).Transfer(request.ToId, request.Amount);
                 if (result)
                 {
-                    await GrainFactory.GetGrain<IDTxAccount>(request.ToId).TransferArrived(request.Amount);
-                    await Commit();
+                    await this.GrainFactory.GetGrain<IDTxAccount>(request.ToId).TransferArrived(request.Amount);
+                    await this.Commit();
                     return true;
                 }
                 else
                 {
-                    await Rollback();
+                    await this.Rollback();
                     return false;
                 }
             }
             catch
             {
-                await Rollback();
+                await this.Rollback();
                 throw;
             }
         }
+
         protected override IDTxActor[] EffectActors(TransferRequest request)
         {
             return new IDTxActor[]
             {
-                GrainFactory.GetGrain<IDTxAccount>(request.FromId),
-                GrainFactory.GetGrain<IDTxAccount>(request.ToId),
+                this.GrainFactory.GetGrain<IDTxAccount>(request.FromId),
+                this.GrainFactory.GetGrain<IDTxAccount>(request.ToId),
             };
         }
     }

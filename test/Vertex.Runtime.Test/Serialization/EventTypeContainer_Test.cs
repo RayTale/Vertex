@@ -1,9 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using Vertex.Abstractions.Event;
-using Vertex.Runtime.Test.Events;
 using Vertex.Runtime.Core;
-using Vertext.Abstractions.Event;
+using Vertex.Runtime.Test.Events;
 using Xunit;
 
 namespace Vertex.Runtime.Test.Serialization
@@ -15,8 +14,9 @@ namespace Vertex.Runtime.Test.Serialization
 
         public EventTypeContainer_Test(ProviderFixture fixture)
         {
-            eventTypeContainer = fixture.Provider.GetService<IEventTypeContainer>();
+            this.eventTypeContainer = fixture.Provider.GetService<IEventTypeContainer>();
         }
+
         [Theory]
         [InlineData(typeof(TopupEvent))]
         [InlineData(typeof(TransferArrivedEvent))]
@@ -27,16 +27,17 @@ namespace Vertex.Runtime.Test.Serialization
         {
             if (type != typeof(NoNamedEvent))
             {
-                var result = eventTypeContainer.TryGet(type, out var name);
+                var result = this.eventTypeContainer.TryGet(type, out var name);
                 Assert.Equal(name, type.Name);
                 Assert.True(result);
             }
             else
             {
-                var result = eventTypeContainer.TryGet(type, out var _);
+                var result = this.eventTypeContainer.TryGet(type, out var _);
                 Assert.False(result);
             }
         }
+
         [Theory]
         [InlineData(nameof(TopupEvent))]
         [InlineData(nameof(TransferArrivedEvent))]
@@ -47,18 +48,15 @@ namespace Vertex.Runtime.Test.Serialization
         {
             if (name != nameof(NoNamedEvent))
             {
-                var result = eventTypeContainer.TryGet(name, out var type);
+                var result = this.eventTypeContainer.TryGet(name, out var type);
                 Assert.Equal(name, type.Name);
                 Assert.True(result);
             }
             else
             {
-                var result = eventTypeContainer.TryGet(name, out var _);
+                var result = this.eventTypeContainer.TryGet(name, out var _);
                 Assert.False(result);
             }
         }
-    }
-    public class NoNamedEvent : IEvent
-    {
     }
 }

@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Vertex.Utils.Channels;
 using Xunit;
 
@@ -10,21 +10,24 @@ namespace Vertex.Utils.Test.Channels
     public class BufferBlockChannel_Test
     {
         private readonly ServiceProvider serviceProvider;
+
         public BufferBlockChannel_Test()
         {
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddLogging();
             serviceCollection.AddTransient(typeof(BufferBlockChannel<>));
-            serviceProvider = serviceCollection.BuildServiceProvider();
+            this.serviceProvider = serviceCollection.BuildServiceProvider();
         }
+
         [Fact]
         public void BindConsumer()
         {
-            var channel = serviceProvider.GetService<BufferBlockChannel<string>>();
+            var channel = this.serviceProvider.GetService<BufferBlockChannel<string>>();
             channel.BindConsumer(list => Task.CompletedTask);
             var ex = Assert.Throws<RebindConsumerException>(() => { channel.BindConsumer(list => Task.CompletedTask); });
             Assert.True(ex is RebindConsumerException);
         }
+
         [Theory]
         [InlineData(100)]
         [InlineData(500)]
@@ -33,28 +36,33 @@ namespace Vertex.Utils.Test.Channels
         [InlineData(10000)]
         public async Task WriteAndConsumer(int count)
         {
-            var channel = serviceProvider.GetService<BufferBlockChannel<string>>();
+            var channel = this.serviceProvider.GetService<BufferBlockChannel<string>>();
             var consumerList = new List<string>();
             var consumerTask = new TaskCompletionSource();
             channel.BindConsumer(list =>
             {
                 consumerList.AddRange(list);
                 if (consumerList.Count >= count)
-                    consumerTask.TrySetResult();
+                {
+                    _ = consumerTask.TrySetResult();
+                }
+
                 return Task.CompletedTask;
             });
             for (int i = 0; i < count; i++)
             {
                 await channel.WriteAsync(i.ToString());
             }
+
             await Task.WhenAny(consumerTask.Task, Task.Delay(3 * 1000));
             Assert.True(consumerTask.Task.IsCompletedSuccessfully);
             Assert.True(consumerList.Count == count);
         }
+
         [Fact]
         public async Task Dispose()
         {
-            var channel = serviceProvider.GetService<BufferBlockChannel<string>>();
+            var channel = this.serviceProvider.GetService<BufferBlockChannel<string>>();
             channel.BindConsumer(list => Task.CompletedTask);
             var waitTask = channel.WaitToReadAsync();
             channel.Dispose();
@@ -62,23 +70,25 @@ namespace Vertex.Utils.Test.Channels
             Assert.False(success);
             Assert.True(channel.IsDisposed);
         }
+
         [Fact]
         public async Task Sequence_Join()
         {
-            var channel = serviceProvider.GetService<BufferBlockChannel<string>>();
-            var channel_1 = serviceProvider.GetService<BufferBlockChannel<string>>();
+            var channel = this.serviceProvider.GetService<BufferBlockChannel<string>>();
+            var channel_1 = this.serviceProvider.GetService<BufferBlockChannel<string>>();
             channel_1.BindConsumer(list => Task.CompletedTask, true);
             await Task.Delay(500);
             var ex = Assert.Throws<ArgumentException>(() => { channel.Join(channel_1); });
             Assert.True(ex is ArgumentException);
         }
+
         [Fact]
         public async Task Sequence_Consumer()
         {
-            var channel = serviceProvider.GetService<BufferBlockChannel<string>>();
-            var channel_1 = serviceProvider.GetService<BufferBlockChannel<string>>();
-            var channel_2 = serviceProvider.GetService<BufferBlockChannel<string>>();
-            var channel_3 = serviceProvider.GetService<BufferBlockChannel<string>>();
+            var channel = this.serviceProvider.GetService<BufferBlockChannel<string>>();
+            var channel_1 = this.serviceProvider.GetService<BufferBlockChannel<string>>();
+            var channel_2 = this.serviceProvider.GetService<BufferBlockChannel<string>>();
+            var channel_3 = this.serviceProvider.GetService<BufferBlockChannel<string>>();
             var consumerTask = new TaskCompletionSource();
             var consumerTask_1 = new TaskCompletionSource();
             var consumerTask_2 = new TaskCompletionSource();

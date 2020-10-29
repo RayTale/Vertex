@@ -1,44 +1,49 @@
-﻿using LinqToDB;
-using LinqToDB.Data;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LinqToDB;
+using LinqToDB.Data;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Vertex.Abstractions.Event;
 using Vertex.Storage.Linq2db.Db;
 using Vertex.Storage.Linq2db.Entities;
 using Vertex.Transaction.Abstractions.Storage;
 using Vertex.Utils.Channels;
 
-namespace Vertex.Storage.EFCore.Storage
+namespace Vertex.Storage.Linq2db.Storage
 {
-    public class TxEventStorage<PrimaryKey> : ITxEventStorage<PrimaryKey>
+    public class TxEventStorage<TPrimaryKey> : ITxEventStorage<TPrimaryKey>
     {
-        readonly DbFactory dbFactory;
-        readonly string optionName, tableName;
-        private readonly IMpscChannel<AskInputBox<EventEntity<PrimaryKey>, bool>> mpscChannel;
-        private readonly ILogger<EventStorage<PrimaryKey>> logger;
+        private readonly DbFactory dbFactory;
+        private readonly string optionName;
+        private readonly string tableName;
+        private readonly IMpscChannel<AskInputBox<EventEntity<TPrimaryKey>, bool>> mpscChannel;
+        private readonly ILogger<TxEventStorage<TPrimaryKey>> logger;
+
         public TxEventStorage(IServiceProvider serviceProvider, DbFactory dbFactory, string optionName, string tableName)
         {
             this.dbFactory = dbFactory;
             this.optionName = optionName;
             this.tableName = tableName;
-            this.logger = serviceProvider.GetService<ILogger<EventStorage<PrimaryKey>>>();
-            this.mpscChannel = serviceProvider.GetService<IMpscChannel<AskInputBox<EventEntity<PrimaryKey>, bool>>>();
+            this.logger = serviceProvider.GetService<ILogger<TxEventStorage<TPrimaryKey>>>();
+            this.mpscChannel = serviceProvider.GetService<IMpscChannel<AskInputBox<EventEntity<TPrimaryKey>, bool>>>();
             this.mpscChannel.BindConsumer(this.BatchInsertExecuter);
         }
+
         #region private
-        private async Task BatchInsertExecuter(List<AskInputBox<EventEntity<PrimaryKey>, bool>> inputList)
+        private async Task BatchInsertExecuter(List<AskInputBox<EventEntity<TPrimaryKey>, bool>> inputList)
         {
-            using var db = dbFactory.GetEventDb(optionName);
-            var table = db.Table<PrimaryKey>().TableName(this.tableName);
+            using var db = this.dbFactory.GetEventDb(this.optionName);
+            var table = db.Table<TPrimaryKey>().TableName(this.tableName);
             try
             {
                 var copyResult = await table.BulkCopyAsync(inputList.Select(o => o.Value));
                 if (copyResult.RowsCopied == inputList.Count)
+                {
                     inputList.ForEach(wrap => wrap.TaskSource.TrySetResult(true));
+                }
             }
             catch (Exception ex)
             {
@@ -47,7 +52,7 @@ namespace Vertex.Storage.EFCore.Storage
                 {
                     try
                     {
-                        var result = await db.InsertAsync(input.Value, tableName);
+                        var result = await db.InsertAsync(input.Value, this.tableName);
                         input.TaskSource.TrySetResult(result > 0);
                     }
                     catch (Exception dbEx)
@@ -66,10 +71,12 @@ namespace Vertex.Storage.EFCore.Storage
                 }
             }
         }
+
         #endregion
-        public async Task<bool> Append(EventDocument<PrimaryKey> document)
+
+        public async Task<bool> Append(EventDocument<TPrimaryKey> document)
         {
-            var entity = new EventEntity<PrimaryKey>
+            var entity = new EventEntity<TPrimaryKey>
             {
                 FlowId = document.FlowId,
                 ActorId = document.ActorId,
@@ -78,14 +85,14 @@ namespace Vertex.Storage.EFCore.Storage
                 Timestamp = document.Timestamp,
                 Version = document.Version
             };
-            var wrap = new AskInputBox<EventEntity<PrimaryKey>, bool>(entity);
+            var wrap = new AskInputBox<EventEntity<TPrimaryKey>, bool>(entity);
             await this.mpscChannel.WriteAsync(wrap);
             return await wrap.TaskSource.Task;
         }
 
-        public async Task DeletePrevious(PrimaryKey actorId, long endVersion)
+        public async Task DeletePrevious(TPrimaryKey actorId, long endVersion)
         {
-            using var db = dbFactory.GetEventDb(optionName);
+            using var db = this.dbFactory.GetEventDb(this.optionName);
             switch (actorId)
             {
                 case long id:
@@ -106,13 +113,13 @@ namespace Vertex.Storage.EFCore.Storage
                         var table = db.Table<Guid>().TableName(this.tableName);
                         await table.Where(o => o.ActorId == paramId && o.Version <= endVersion).DeleteAsync();
                     }; break;
-                default: throw new ArgumentOutOfRangeException(typeof(PrimaryKey).FullName);
+                default: throw new ArgumentOutOfRangeException(typeof(TPrimaryKey).FullName);
             }
         }
 
-        public async Task<IList<EventDocument<PrimaryKey>>> GetLatest(PrimaryKey actorId, int limit)
+        public async Task<IList<EventDocument<TPrimaryKey>>> GetLatest(TPrimaryKey actorId, int limit)
         {
-            using var db = dbFactory.GetEventDb(optionName);
+            using var db = this.dbFactory.GetEventDb(this.optionName);
             switch (actorId)
             {
                 case long id:
@@ -120,7 +127,7 @@ namespace Vertex.Storage.EFCore.Storage
                         var paramId = id;
                         var table = db.Table<long>().TableName(this.tableName);
                         return await table.Where(o => o.ActorId == paramId).OrderByDescending(o => o.Timestamp).Take(limit).Select(o =>
-                          new EventDocument<PrimaryKey>
+                          new EventDocument<TPrimaryKey>
                           {
                               FlowId = o.FlowId,
                               ActorId = actorId,
@@ -135,7 +142,7 @@ namespace Vertex.Storage.EFCore.Storage
                         var paramId = id;
                         var table = db.Table<string>().TableName(this.tableName);
                         return await table.Where(o => o.ActorId == paramId).OrderByDescending(o => o.Timestamp).Take(limit).Select(o =>
-                        new EventDocument<PrimaryKey>
+                        new EventDocument<TPrimaryKey>
                         {
                             FlowId = o.FlowId,
                             ActorId = actorId,
@@ -150,7 +157,7 @@ namespace Vertex.Storage.EFCore.Storage
                         var paramId = id;
                         var table = db.Table<Guid>().TableName(this.tableName);
                         return await table.Where(o => o.ActorId == paramId).OrderByDescending(o => o.Timestamp).Take(limit).Select(o =>
-                        new EventDocument<PrimaryKey>
+                        new EventDocument<TPrimaryKey>
                         {
                             FlowId = o.FlowId,
                             ActorId = actorId,
@@ -160,7 +167,7 @@ namespace Vertex.Storage.EFCore.Storage
                             Timestamp = o.Timestamp
                         }).ToListAsync();
                     };
-                default: throw new ArgumentOutOfRangeException(typeof(PrimaryKey).FullName);
+                default: throw new ArgumentOutOfRangeException(typeof(TPrimaryKey).FullName);
             }
         }
     }

@@ -1,15 +1,15 @@
-﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Orleans;
-using Orleans.Runtime;
-using Orleans.Streams;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Orleans;
+using Orleans.Runtime;
+using Orleans.Streams;
 using Vertex.Abstractions.Actor;
 using Vertex.Abstractions.InnerService;
 using Vertex.Stream.Common;
@@ -20,8 +20,13 @@ namespace Vertex.Stream.InMemory.Consumer
 {
     public class ConsumerManager : IHostedService, IDisposable
     {
+        private const int LockHoldingSeconds = 60;
+        private const int HoldTime = 20 * 1000;
+        private const int MonitTime = 60 * 2 * 1000;
+        private const int CheckTime = 10 * 1000;
+
         private readonly List<QueueInfo> queues;
-        readonly StreamOptions streamOptions;
+        private readonly StreamOptions streamOptions;
         private readonly ILogger<ConsumerManager> logger;
         private readonly IServiceProvider provider;
         private readonly IGrainFactory grainFactory;
@@ -30,15 +35,13 @@ namespace Vertex.Stream.InMemory.Consumer
 
         private readonly ConcurrentDictionary<string, long> runners = new ConcurrentDictionary<string, long>();
 
-        private Timer heathCheckTimer, distributedMonitorTime, distributedHoldTimer;
+        private Timer heathCheckTimer;
+        private Timer distributedMonitorTime;
+        private Timer distributedHoldTimer;
 
-        private const int lockHoldingSeconds = 60;
         private int distributedMonitorTimeLock;
         private int distributedHoldTimerLock;
         private int heathCheckTimerLock;
-        private const int holdTime = 20 * 1000;
-        private const int monitTime = 60 * 2 * 1000;
-        private const int checkTime = 10 * 1000;
 
         public ConsumerManager(
             ILogger<ConsumerManager> logger,
@@ -51,7 +54,7 @@ namespace Vertex.Stream.InMemory.Consumer
             this.logger = logger;
             this.grainFactory = grainFactory;
 
-            queues = new List<QueueInfo>();
+            this.queues = new List<QueueInfo>();
             foreach (var assembly in AssemblyHelper.GetAssemblies(logger))
             {
                 foreach (var type in assembly.GetTypes())
@@ -63,7 +66,7 @@ namespace Vertex.Stream.InMemory.Consumer
                         {
                             var topic = i == 0 ? attribute.Name : $"{attribute.Name}_{i}";
                             var interfaceType = type.GetInterfaces().Where(t => typeof(IFlowActor).IsAssignableFrom(t) && !t.IsGenericType && t != typeof(IFlowActor)).FirstOrDefault();
-                            queues.Add(new QueueInfo
+                            this.queues.Add(new QueueInfo
                             {
                                 ActorType = interfaceType,
                                 Topic = topic,
@@ -83,9 +86,9 @@ namespace Vertex.Stream.InMemory.Consumer
                 this.logger.LogInformation("EventBus Background Service is starting.");
             }
 
-            this.distributedMonitorTime = new Timer(state => this.DistributedStart().Wait(), null, 1000, monitTime);
-            this.distributedHoldTimer = new Timer(state => this.DistributedHold().Wait(), null, holdTime, holdTime);
-            this.heathCheckTimer = new Timer(state => { this.HeathCheck().Wait(); }, null, checkTime, checkTime);
+            this.distributedMonitorTime = new Timer(state => this.DistributedStart().Wait(), null, 1000, MonitTime);
+            this.distributedHoldTimer = new Timer(state => this.DistributedHold().Wait(), null, HoldTime, HoldTime);
+            this.heathCheckTimer = new Timer(state => { this.HeathCheck().Wait(); }, null, CheckTime, CheckTime);
             return Task.CompletedTask;
         }
 
@@ -116,11 +119,12 @@ namespace Vertex.Stream.InMemory.Consumer
             this.distributedMonitorTime?.Dispose();
             this.distributedHoldTimer?.Dispose();
         }
+
         private async Task DistributedStart()
         {
             try
             {
-                var streamProvider = provider.GetRequiredServiceByName<IStreamProvider>(streamOptions.ProviderName);
+                var streamProvider = this.provider.GetRequiredServiceByName<IStreamProvider>(this.streamOptions.ProviderName);
                 if (Interlocked.CompareExchange(ref this.distributedMonitorTimeLock, 1, 0) == 0)
                 {
                     foreach (var queue in this.queues)
@@ -129,7 +133,7 @@ namespace Vertex.Stream.InMemory.Consumer
                         if (!this.runners.ContainsKey(key))
                         {
                             var weight = 100000 - this.runners.Count;
-                            var (isOk, lockId, expectMillisecondDelay) = await this.grainFactory.GetGrain<IWeightHoldLockActor>(key).Lock(weight, lockHoldingSeconds);
+                            var (isOk, lockId, expectMillisecondDelay) = await this.grainFactory.GetGrain<IWeightHoldLockActor>(key).Lock(weight, LockHoldingSeconds);
                             if (isOk)
                             {
                                 if (this.runners.TryAdd(key, lockId))
@@ -138,7 +142,6 @@ namespace Vertex.Stream.InMemory.Consumer
                                     this.consumerRunners.TryAdd(key, runner);
                                     await runner.Run();
                                 }
-
                             }
                         }
                     }
@@ -163,7 +166,7 @@ namespace Vertex.Stream.InMemory.Consumer
                     {
                         if (this.runners.TryGetValue(lockKV.Key, out var lockId))
                         {
-                            var holdResult = await this.grainFactory.GetGrain<IWeightHoldLockActor>(lockKV.Key).Hold(lockId, lockHoldingSeconds);
+                            var holdResult = await this.grainFactory.GetGrain<IWeightHoldLockActor>(lockKV.Key).Hold(lockId, LockHoldingSeconds);
                             if (!holdResult)
                             {
                                 if (this.consumerRunners.TryRemove(lockKV.Key, out var runner))

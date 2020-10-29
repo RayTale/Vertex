@@ -4,9 +4,10 @@ using Vertex.Abstractions.Event;
 
 namespace Vertex.Abstractions.Storage
 {
-    public interface IEventArchive<PrimaryKey>
+    public interface IEventArchive<TPrimaryKey>
     {
-        Task Arichive(IList<EventDocument<PrimaryKey>> documents);
-        Task<List<EventDocument<PrimaryKey>>> GetList(PrimaryKey actorId, long startVersion, long endVersion);
+        Task Arichive(IList<EventDocument<TPrimaryKey>> documents);
+
+        Task<List<EventDocument<TPrimaryKey>>> GetList(TPrimaryKey actorId, long startVersion, long endVersion);
     }
 }

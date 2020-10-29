@@ -1,17 +1,17 @@
-﻿using LinqToDB;
-using LinqToDB.Data;
-using Orleans;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LinqToDB;
+using LinqToDB.Data;
+using Orleans;
 using Vertex.Abstractions.InnerService;
 
 namespace Vertex.Storage.Linq2db.Storage
 {
     public static class ConnExtensions
     {
-        public static async Task CreateTableIfNotExists<Entity>(this DataConnection conn, IGrainFactory grainFactory, string lockKey, string tableName, Func<Task> initFunc = default, int errorTimes = 0)
+        public static async Task CreateTableIfNotExists<TEntity>(this DataConnection conn, IGrainFactory grainFactory, string lockKey, string tableName, Func<Task> initFunc = default, int errorTimes = 0)
         {
             var lockService = grainFactory.GetGrain<ILockActor>(lockKey);
             if (await lockService.Lock(30 * 1000))
@@ -21,7 +21,7 @@ namespace Vertex.Storage.Linq2db.Storage
                     var tables = await conn.GetTables();
                     if (!tables.Contains(tableName))
                     {
-                        await conn.CreateTableAsync<Entity>(tableName);
+                        await conn.CreateTableAsync<TEntity>(tableName);
                     }
                     if (initFunc != default)
                     {
@@ -33,12 +33,17 @@ namespace Vertex.Storage.Linq2db.Storage
                 {
                     await lockService.Unlock();
                     if (errorTimes <= 3)
-                        await CreateTableIfNotExists<Entity>(conn, grainFactory, lockKey, tableName, initFunc, errorTimes++);
+                    {
+                        await CreateTableIfNotExists<TEntity>(conn, grainFactory, lockKey, tableName, initFunc, errorTimes++);
+                    }
                     else
+                    {
                         throw;
+                    }
                 }
             }
         }
+
         public static async Task<List<string>> GetTables(this DataConnection conn)
         {
             if (conn.DataProvider.Name == DbProviderName.SQLite

@@ -6,9 +6,9 @@ namespace Vertex.Transaction
 {
     public static class Extensions
     {
-        public static void AddTxUnitHandler<PrimaryKey, TRequest>(this IServiceCollection serviceCollection)
+        public static void AddTxUnitHandler<TPrimaryKey, TRequest>(this IServiceCollection serviceCollection)
         {
-            serviceCollection.AddSingleton(typeof(ISnapshotHandler<PrimaryKey, TxUnitSnapshot<TRequest>>), typeof(TxUnitSnapshotHandler<PrimaryKey, TRequest>));
+            serviceCollection.AddSingleton(typeof(ISnapshotHandler<TPrimaryKey, TxUnitSnapshot<TRequest>>), typeof(TxUnitSnapshotHandler<TPrimaryKey, TRequest>));
         }
     }
 }

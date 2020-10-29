@@ -2,7 +2,6 @@
 {
     public class ConsumerOptions
     {
-
         /// <summary>
         /// 发生异常重试次数
         /// </summary>

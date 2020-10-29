@@ -4,14 +4,14 @@ using Vertext.Abstractions.Event;
 
 namespace Vertex.Transaction.Events
 {
-    public class TxEventTaskBox<Snapshot>
+    public class TxEventTaskBox<TSnapshot>
     {
         private readonly TaskCompletionSource<bool> taskCompletionSource;
 
         public TxEventTaskBox(
             string transactionId,
             string flowId,
-            Func<Snapshot, Func<IEvent, Task>, Task> handler,
+            Func<TSnapshot, Func<IEvent, Task>, Task> handler,
             TaskCompletionSource<bool> taskCompletionSource)
         {
             this.TxId = transactionId;
@@ -21,11 +21,12 @@ namespace Vertex.Transaction.Events
         }
 
         public string TxId { get; set; }
+
         public string FlowId { get; set; }
 
         public bool Executed { get; set; }
 
-        public Func<Snapshot, Func<IEvent, Task>, Task> Handler { get; }
+        public Func<TSnapshot, Func<IEvent, Task>, Task> Handler { get; }
 
         public void Completed(bool result)
         {

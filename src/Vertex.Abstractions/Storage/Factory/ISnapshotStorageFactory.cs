@@ -5,6 +5,6 @@ namespace Vertex.Abstractions.Storage
 {
     public interface ISnapshotStorageFactory
     {
-        ValueTask<ISnapshotStorage<PrimaryKey>> Create<PrimaryKey>(IActor<PrimaryKey> actor);
+        ValueTask<ISnapshotStorage<TPrimaryKey>> Create<TPrimaryKey>(IActor<TPrimaryKey> actor);
     }
 }

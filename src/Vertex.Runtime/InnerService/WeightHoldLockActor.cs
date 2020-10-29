@@ -16,12 +16,12 @@ namespace Vertex.Runtime.InnerService
         {
             if (this.lockId == lockId && this.currentWeight >= this.maxWaitWeight)
             {
-                this.expireTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + holdingSeconds * 1000;
+                this.expireTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + (holdingSeconds * 1000);
                 return Task.FromResult(true);
             }
             else
             {
-                this.Unlock(lockId);
+                _ = this.Unlock(lockId);
                 return Task.FromResult(false);
             }
         }
@@ -29,22 +29,22 @@ namespace Vertex.Runtime.InnerService
         public Task<(bool isOk, long lockId, int expectMillisecondDelay)> Lock(int weight, int holdingSeconds = 30)
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if ((this.lockId == 0 || now > this.expireTime) && weight >= maxWaitWeight)
+            if ((this.lockId == 0 || now > this.expireTime) && weight >= this.maxWaitWeight)
             {
                 this.lockId = now;
                 this.currentWeight = weight;
                 this.maxWaitWeight = -1;
-                this.expireTime = now + holdingSeconds * 1000;
+                this.expireTime = now + (holdingSeconds * 1000);
                 return Task.FromResult((true, now, 0));
             }
 
             if (weight >= this.maxWaitWeight && weight > this.currentWeight)
             {
                 this.maxWaitWeight = weight;
-                return Task.FromResult((false, (long)0, (int)(this.expireTime - now)));
+                return Task.FromResult((false, 0L, (int)(this.expireTime - now)));
             }
 
-            return Task.FromResult((false, (long)0, 0));
+            return Task.FromResult((false, 0L, 0));
         }
 
         public Task Unlock(long lockId)

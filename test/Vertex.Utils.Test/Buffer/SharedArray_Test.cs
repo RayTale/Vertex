@@ -21,6 +21,7 @@ namespace Vertex.Utils.Test.Buffer
             Assert.Equal(sizeof(int), buffer.AsSpan().Length);
             Assert.Equal(sizeof(int), buffer.ToArray().Length);
         }
+
         [Theory]
         [InlineData(1)]
         [InlineData(10)]
@@ -35,9 +36,11 @@ namespace Vertex.Utils.Test.Buffer
             {
                 buffer.Write(i);
             }
+
             Assert.Equal(sizeof(int) * count, buffer.AsSpan().Length);
             Assert.Equal(sizeof(int) * count, buffer.ToArray().Length);
         }
+
         [Theory]
         [InlineData(1)]
         [InlineData(10)]
@@ -52,9 +55,11 @@ namespace Vertex.Utils.Test.Buffer
             {
                 buffer.Write((uint)i);
             }
+
             Assert.Equal(sizeof(uint) * count, buffer.AsSpan().Length);
             Assert.Equal(sizeof(uint) * count, buffer.ToArray().Length);
         }
+
         [Theory]
         [InlineData(1)]
         [InlineData(10)]
@@ -69,9 +74,11 @@ namespace Vertex.Utils.Test.Buffer
             {
                 buffer.Write((long)i);
             }
+
             Assert.Equal(sizeof(long) * count, buffer.AsSpan().Length);
             Assert.Equal(sizeof(long) * count, buffer.ToArray().Length);
         }
+
         [Theory]
         [InlineData(1)]
         [InlineData(10)]
@@ -86,9 +93,11 @@ namespace Vertex.Utils.Test.Buffer
             {
                 buffer.Write((short)i);
             }
+
             Assert.Equal(sizeof(short) * count, buffer.AsSpan().Length);
             Assert.Equal(sizeof(short) * count, buffer.ToArray().Length);
         }
+
         [Theory]
         [InlineData(1)]
         [InlineData(10)]
@@ -103,9 +112,11 @@ namespace Vertex.Utils.Test.Buffer
             {
                 buffer.Write((ushort)i);
             }
+
             Assert.Equal(sizeof(ushort) * count, buffer.AsSpan().Length);
             Assert.Equal(sizeof(ushort) * count, buffer.ToArray().Length);
         }
+
         [Theory]
         [InlineData(1)]
         [InlineData(10)]
@@ -123,9 +134,11 @@ namespace Vertex.Utils.Test.Buffer
                 length += bytes.Length;
                 buffer.Write(bytes);
             }
+
             Assert.Equal(length, buffer.AsSpan().Length);
             Assert.Equal(length, buffer.ToArray().Length);
         }
+
         [Theory]
         [InlineData(1)]
         [InlineData(10)]
@@ -142,9 +155,11 @@ namespace Vertex.Utils.Test.Buffer
                 buffer.WriteUtf8String(i.ToString());
                 length += Encoding.UTF8.GetByteCount(i.ToString());
             }
+
             Assert.Equal(length, buffer.AsSpan().Length);
             Assert.Equal(length, buffer.ToArray().Length);
         }
+
         [Theory]
         [InlineData(1)]
         [InlineData(10)]
@@ -161,6 +176,7 @@ namespace Vertex.Utils.Test.Buffer
                 buffer.WriteUtf8String(i.ToString().AsSpan());
                 length += Encoding.UTF8.GetByteCount(i.ToString());
             }
+
             Assert.Equal(length, buffer.AsSpan().Length);
             Assert.Equal(length, buffer.ToArray().Length);
         }

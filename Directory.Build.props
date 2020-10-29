@@ -1,0 +1,34 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PackageId>$(AssemblyName)</PackageId>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/RayTale/Vertex</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/RayTale/Vertex.git</RepositoryUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/RayTale/Vertex/main/logo.png</PackageIconUrl>
+    <PackageTags>orleans,event-sourcing,actor,Vertex</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <RepositoryType>git</RepositoryType>
+    <NoWarn>1701;1702;1705;1591</NoWarn>
+  </PropertyGroup>
+
+   <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Lindhart.Analyser.MissingAwaitWarning" />
+    <PackageReference Include="Microsoft.CodeQuality.Analyzers" />
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" />
+    <PackageReference Include="Nerdbank.GitVersioning" />
+    <PackageReference Include="StyleCop.Analyzers" />
+  </ItemGroup>
+</Project>

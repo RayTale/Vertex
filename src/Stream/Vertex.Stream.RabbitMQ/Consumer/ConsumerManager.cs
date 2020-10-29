@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Orleans;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Orleans;
 using Vertex.Abstractions.Actor;
 using Vertex.Abstractions.InnerService;
 using Vertex.Stream.Common;
@@ -16,19 +16,20 @@ namespace Vertex.Stream.RabbitMQ.Consumer
 {
     public class ConsumerManager : IHostedService, IDisposable
     {
+        private const int HoldTime = 20 * 1000;
+        private const int MonitTime = 60 * 2 * 1000;
+        private const int CheckTime = 10 * 1000;
+        private const int LockHoldingSeconds = 60;
+
         private readonly ILogger<ConsumerManager> logger;
         private readonly IServiceProvider provider;
         private readonly IGrainFactory grainFactory;
         private readonly List<QueueInfo> queues;
         private readonly ConcurrentDictionary<string, ConsumerRunner> consumerRunners = new ConcurrentDictionary<string, ConsumerRunner>();
         private readonly ConcurrentDictionary<string, long> runners = new ConcurrentDictionary<string, long>();
-        private Timer heathCheckTimer, distributedMonitorTime, distributedHoldTimer;
-
-        private const int HoldTime = 20 * 1000;
-        private const int MonitTime = 60 * 2 * 1000;
-        private const int checkTime = 10 * 1000;
-
-        private const int lockHoldingSeconds = 60;
+        private Timer heathCheckTimer;
+        private Timer distributedMonitorTime;
+        private Timer distributedHoldTimer;
         private int distributedMonitorTimeLock;
         private int distributedHoldTimerLock;
         private int heathCheckTimerLock;
@@ -41,7 +42,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
             this.provider = provider;
             this.logger = logger;
             this.grainFactory = grainFactory;
-            queues = new List<QueueInfo>();
+            this.queues = new List<QueueInfo>();
             foreach (var assembly in AssemblyHelper.GetAssemblies(logger))
             {
                 foreach (var type in assembly.GetTypes())
@@ -54,10 +55,10 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                             var stream = i == 0 ? attribute.Name : $"{attribute.Name}_{i}";
                             var interfaceType = type.GetInterfaces().Where(t => typeof(IFlowActor).IsAssignableFrom(t) && !t.IsGenericType && t != typeof(IFlowActor)).FirstOrDefault();
                             var queue = i == 0 ? $"{attribute.Name}_{attribute.Group}" : $"{attribute.Name}_{attribute.Group}_{i}";
-                            var existQueue = queues.SingleOrDefault(q => q.Exchange == attribute.Name && q.Queue == queue && q.RoutingKey == stream);
+                            var existQueue = this.queues.SingleOrDefault(q => q.Exchange == attribute.Name && q.Queue == queue && q.RoutingKey == stream);
                             if (existQueue == default)
                             {
-                                queues.Add(new QueueInfo
+                                this.queues.Add(new QueueInfo
                                 {
                                     SubActorType = new List<Type> { interfaceType },
                                     Exchange = attribute.Name,
@@ -84,7 +85,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
 
             this.distributedMonitorTime = new Timer(state => this.DistributedStart().Wait(), null, 1000, MonitTime);
             this.distributedHoldTimer = new Timer(state => this.DistributedHold().Wait(), null, HoldTime, HoldTime);
-            this.heathCheckTimer = new Timer(state => { this.HeathCheck().Wait(); }, null, checkTime, checkTime);
+            this.heathCheckTimer = new Timer(state => { this.HeathCheck().Wait(); }, null, CheckTime, CheckTime);
             return Task.CompletedTask;
         }
 
@@ -115,6 +116,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
             this.distributedHoldTimer?.Dispose();
             this.heathCheckTimer?.Dispose();
         }
+
         private async Task DistributedStart()
         {
             try
@@ -127,7 +129,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                         if (!this.runners.ContainsKey(key))
                         {
                             var weight = 100000 - this.runners.Count;
-                            var (isOk, lockId, expectMillisecondDelay) = await this.grainFactory.GetGrain<IWeightHoldLockActor>(key).Lock(weight, lockHoldingSeconds);
+                            var (isOk, lockId, expectMillisecondDelay) = await this.grainFactory.GetGrain<IWeightHoldLockActor>(key).Lock(weight, LockHoldingSeconds);
                             if (isOk)
                             {
                                 if (this.runners.TryAdd(key, lockId))
@@ -136,7 +138,6 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                                     this.consumerRunners.TryAdd(key, runner);
                                     await runner.Run();
                                 }
-
                             }
                         }
                     }
@@ -170,7 +171,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                     {
                         if (this.runners.TryGetValue(lockKV.Key, out var lockId))
                         {
-                            var holdResult = await this.grainFactory.GetGrain<IWeightHoldLockActor>(lockKV.Key).Hold(lockId, lockHoldingSeconds);
+                            var holdResult = await this.grainFactory.GetGrain<IWeightHoldLockActor>(lockKV.Key).Hold(lockId, LockHoldingSeconds);
                             if (!holdResult)
                             {
                                 if (this.consumerRunners.TryRemove(lockKV.Key, out var runner))

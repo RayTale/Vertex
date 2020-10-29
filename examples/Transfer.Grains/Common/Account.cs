@@ -8,39 +8,43 @@ using Vertex.Stream.Common;
 
 namespace Transfer.Grains.Common
 {
-    [EventStorage(Consts.core_db_Name, nameof(Account), 3)]
-    [EventArchive(Consts.core_db_Name, nameof(Account), "month")]
-    [SnapshotStorage(Consts.core_db_Name, nameof(Account), 3)]
+    [EventStorage(Consts.CoreDbName, nameof(Account), 3)]
+    [EventArchive(Consts.CoreDbName, nameof(Account), "month")]
+    [SnapshotStorage(Consts.CoreDbName, nameof(Account), 3)]
     [Stream(nameof(Account), 3)]
     public sealed class Account : VertexActor<long, AccountSnapshot>, IAccount
     {
         public Task<decimal> GetBalance()
         {
-            return Task.FromResult(Snapshot.Data.Balance);
+            return Task.FromResult(this.Snapshot.Data.Balance);
         }
+
         public Task<bool> Transfer(long toAccountId, decimal amount, string transferId)
         {
-            if (Snapshot.Data.Balance >= amount)
+            if (this.Snapshot.Data.Balance >= amount)
             {
                 var evt = new TransferEvent
                 {
                     Amount = amount,
-                    Balance = Snapshot.Data.Balance - amount,
+                    Balance = this.Snapshot.Data.Balance - amount,
                     ToId = toAccountId
                 };
-                return RaiseEvent(evt, transferId);
+                return this.RaiseEvent(evt, transferId);
             }
             else
+            {
                 return Task.FromResult(false);
+            }
         }
+
         public Task<bool> TopUp(decimal amount, string topupId)
         {
             var evt = new TopupEvent
             {
                 Amount = amount,
-                Balance = Snapshot.Data.Balance + amount
+                Balance = this.Snapshot.Data.Balance + amount
             };
-            return RaiseEvent(evt, topupId);
+            return this.RaiseEvent(evt, topupId);
         }
 
         public Task TransferArrived(decimal amount)
@@ -48,9 +52,9 @@ namespace Transfer.Grains.Common
             var evt = new TransferArrivedEvent
             {
                 Amount = amount,
-                Balance = Snapshot.Data.Balance + amount
+                Balance = this.Snapshot.Data.Balance + amount
             };
-            return RaiseEvent(evt);
+            return this.RaiseEvent(evt);
         }
 
         public Task<bool> TransferRefunds(decimal amount)
@@ -58,9 +62,9 @@ namespace Transfer.Grains.Common
             var evt = new TransferRefundsEvent
             {
                 Amount = amount,
-                Balance = Snapshot.Data.Balance + amount
+                Balance = this.Snapshot.Data.Balance + amount
             };
-            return RaiseEvent(evt);
+            return this.RaiseEvent(evt);
         }
     }
 }

@@ -3,14 +3,14 @@ using Vertex.Abstractions.Snapshot;
 
 namespace Vertex.Abstractions.Storage
 {
-    public interface ISubSnapshotStorage<PrimaryKey>
+    public interface ISubSnapshotStorage<TPrimaryKey>
     {
-        Task<SubSnapshot<PrimaryKey>> Get(PrimaryKey id);
+        Task<SubSnapshot<TPrimaryKey>> Get(TPrimaryKey id);
 
-        Task Insert(SubSnapshot<PrimaryKey> snapshot);
+        Task Insert(SubSnapshot<TPrimaryKey> snapshot);
 
-        Task Update(SubSnapshot<PrimaryKey> snapshot);
+        Task Update(SubSnapshot<TPrimaryKey> snapshot);
 
-        Task Delete(PrimaryKey id);
+        Task Delete(TPrimaryKey id);
     }
 }

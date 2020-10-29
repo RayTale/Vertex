@@ -1,6 +1,6 @@
-﻿using Orleans.Runtime;
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
+using Orleans.Runtime;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Runtime.Exceptions;
 using Vertext.Abstractions.Event;
@@ -10,7 +10,7 @@ namespace Vertex.Runtime.Actor
     public static class Extentions
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void UpdateVersion<PrimaryKey>(this SnapshotMeta<PrimaryKey> snapshotMeta, EventMeta eventMeta, Type grainType)
+        public static void UpdateVersion<TPrimaryKey>(this SnapshotMeta<TPrimaryKey> snapshotMeta, EventMeta eventMeta, Type grainType)
         {
             if (snapshotMeta.Version + 1 != eventMeta.Version)
             {
@@ -20,11 +20,13 @@ namespace Vertex.Runtime.Actor
             snapshotMeta.Version = eventMeta.Version;
 
             if (snapshotMeta.MinEventVersion == 0)
+            {
                 snapshotMeta.MinEventVersion = 1;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ForceUpdateVersion<PrimaryKey>(this SnapshotMeta<PrimaryKey> snapshotMeta, EventMeta eventMeta, Type grainType)
+        public static void ForceUpdateVersion<TPrimaryKey>(this SnapshotMeta<TPrimaryKey> snapshotMeta, EventMeta eventMeta, Type grainType)
         {
             if (snapshotMeta.Version + 1 != eventMeta.Version)
             {
@@ -36,7 +38,7 @@ namespace Vertex.Runtime.Actor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void IncrementDoingVersion<PrimaryKey>(this SnapshotMeta<PrimaryKey> snapshotMeta, Type grainType)
+        public static void IncrementDoingVersion<TPrimaryKey>(this SnapshotMeta<TPrimaryKey> snapshotMeta, Type grainType)
         {
             if (snapshotMeta.DoingVersion != snapshotMeta.Version)
             {
@@ -46,24 +48,23 @@ namespace Vertex.Runtime.Actor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DecrementDoingVersion<PrimaryKey>(this SnapshotMeta<PrimaryKey> snapshotMeta) => snapshotMeta.DoingVersion -= 1;
+        public static void DecrementDoingVersion<TPrimaryKey>(this SnapshotMeta<TPrimaryKey> snapshotMeta) => snapshotMeta.DoingVersion -= 1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string GetEventId<PrimaryKey>(this EventUnit<PrimaryKey> @event)
+        public static string GetEventId<TPrimaryKey>(this EventUnit<TPrimaryKey> @event)
         {
             return $"{@event.ActorId}_{@event.Meta.Version}";
         }
 
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void UnsafeUpdateVersion<PrimaryKey>(this SubSnapshot<PrimaryKey> snapshot, EventMeta eventBase)
+        public static void UnsafeUpdateVersion<TPrimaryKey>(this SubSnapshot<TPrimaryKey> snapshot, EventMeta eventBase)
         {
             snapshot.DoingVersion = eventBase.Version;
             snapshot.Version = eventBase.Version;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void IncrementDoingVersion<PrimaryKey>(this SubSnapshot<PrimaryKey> state, Type grainType)
+        public static void IncrementDoingVersion<TPrimaryKey>(this SubSnapshot<TPrimaryKey> state, Type grainType)
         {
             if (state.DoingVersion != state.Version)
             {
@@ -74,7 +75,7 @@ namespace Vertex.Runtime.Actor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void UpdateVersion<PrimaryKey>(this SubSnapshot<PrimaryKey> snapshot, EventMeta eventBase, Type grainType)
+        public static void UpdateVersion<TPrimaryKey>(this SubSnapshot<TPrimaryKey> snapshot, EventMeta eventBase, Type grainType)
         {
             if (snapshot.Version + 1 != eventBase.Version)
             {
@@ -85,7 +86,7 @@ namespace Vertex.Runtime.Actor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void FullUpdateVersion<PrimaryKey>(this SubSnapshot<PrimaryKey> snapshot, EventMeta eventBase, Type grainType)
+        public static void FullUpdateVersion<TPrimaryKey>(this SubSnapshot<TPrimaryKey> snapshot, EventMeta eventBase, Type grainType)
         {
             if (snapshot.Version > 0 && snapshot.Version + 1 != eventBase.Version)
             {

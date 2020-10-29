@@ -1,7 +1,7 @@
-﻿using Orleans.TestingHost;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Orleans.TestingHost;
 using Vertex.TxRuntime.Core;
 using Vertex.TxRuntime.Test.Biz.IActors;
 using Xunit;
@@ -11,11 +11,13 @@ namespace Vertex.TxRuntime.Test.ActorTest
     [Collection(ClusterCollection.Name)]
     public class ReentryActor_Test
     {
-        private readonly TestCluster _cluster;
+        private readonly TestCluster cluster;
+
         public ReentryActor_Test(ClusterFixture fixture)
         {
-            _cluster = fixture.Cluster;
+            this.cluster = fixture.Cluster;
         }
+
         [Theory]
         [InlineData(200, 1)]
         [InlineData(201, 100)]
@@ -25,7 +27,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, times).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IReentryAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IReentryAccount>(id);
 
             await Task.WhenAll(Enumerable.Range(0, times).Select(i => accountActor.TopUp(topupAmount, guids[i])));
             var snapshot = await accountActor.GetSnapshot();
@@ -42,6 +44,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
             Assert.Equal(backupSnapshot.Meta.Version, times);
             Assert.Equal(backupSnapshot.Meta.Version, backupSnapshot.Meta.DoingVersion);
         }
+
         [Theory]
         [InlineData(300)]
         [InlineData(301)]
@@ -50,7 +53,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
         public async Task Concurrent_ErrorEvent(int id)
         {
             decimal topupAmount = 100;
-            var accountActor = _cluster.GrainFactory.GetGrain<IReentryAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IReentryAccount>(id);
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             {

@@ -1,0 +1,9 @@
+{
+  "sdk": {
+    "version": "5.0.100-rc.2.20479.15",
+    "rollForward": "latestFeature"
+  },
+  "msbuild-sdks": {
+    "Microsoft.Build.CentralPackageVersions": "2.0.79"
+  }
+}

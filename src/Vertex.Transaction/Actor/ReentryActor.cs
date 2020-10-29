@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Orleans.Runtime;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Orleans.Runtime;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Runtime;
 using Vertex.Transaction.Abstractions.Snapshot;
@@ -14,62 +14,73 @@ using Vertext.Abstractions.Event;
 
 namespace Vertex.Transaction.Actor
 {
-    public class ReentryActor<PrimaryKey, T> : InnerTxActor<PrimaryKey, T>
+    public class ReentryActor<TPrimaryKey, T> : InnerTxActor<TPrimaryKey, T>
         where T : ITxSnapshot<T>, new()
     {
+        protected IMpscChannel<TxEventTaskBox<SnapshotUnit<TPrimaryKey, T>>> RequestChannel { get; private set; }
 
-        protected IMpscChannel<TxEventTaskBox<SnapshotUnit<PrimaryKey, T>>> RequestChannel { get; private set; }
         public override async Task OnActivateAsync()
         {
             await base.OnActivateAsync();
-            this.RequestChannel = this.ServiceProvider.GetService<IMpscChannel<TxEventTaskBox<SnapshotUnit<PrimaryKey, T>>>>();
+            this.RequestChannel = this.ServiceProvider.GetService<IMpscChannel<TxEventTaskBox<SnapshotUnit<TPrimaryKey, T>>>>();
             this.RequestChannel.BindConsumer(this.RequestExecutor);
         }
+
         public override async Task OnDeactivateAsync()
         {
             await base.OnDeactivateAsync();
             this.RequestChannel.Dispose();
         }
+
         protected override Task<bool> RaiseEvent(IEvent @event, string flowId = null)
         {
-            return ConcurrentRaiseEvent(@event, flowId);
+            return this.ConcurrentRaiseEvent(@event, flowId);
         }
+
         protected virtual async Task<bool> ConcurrentRaiseEvent(
-          Func<SnapshotUnit<PrimaryKey, T>, Func<IEvent, Task>, Task> handler, string flowId = default)
+          Func<SnapshotUnit<TPrimaryKey, T>, Func<IEvent, Task>, Task> handler, string flowId = default)
         {
             if (string.IsNullOrEmpty(flowId))
             {
                 flowId = RequestContext.Get(RuntimeConsts.EventFlowIdKey) as string;
                 if (string.IsNullOrEmpty(flowId))
+                {
                     throw new ArgumentNullException(nameof(flowId));
+                }
             }
             var taskSource = new TaskCompletionSource<bool>();
-            await this.RequestChannel.WriteAsync(new TxEventTaskBox<SnapshotUnit<PrimaryKey, T>>(default, flowId, handler, taskSource));
+            await this.RequestChannel.WriteAsync(new TxEventTaskBox<SnapshotUnit<TPrimaryKey, T>>(default, flowId, handler, taskSource));
             return await taskSource.Task;
         }
+
         /// <summary>
         /// Concurrent processing of events that do not depend on the current state
-        /// If the generation of the event depends on the current state, please use <see cref="ConcurrentRaiseEvent(Func{Snapshot{PrimaryKey, SnapshotType}, Func{IEvent, EventUID, Task}, Task})"/>
+        /// If the generation of the event depends on the current state, please use <see cref="ConcurrentRaiseEvent(Func{SnapshotUnit{TPrimaryKey, T}, Func{IEvent, Task}, Task}, string)"/>
         /// </summary>
         /// <param name="evt">events that do not depend on the current state</param>
-        /// <param name="uniqueId">Idempotency judgment value</param>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <param name="flowId">Idempotency judgment value</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         protected Task<bool> ConcurrentRaiseEvent(IEvent evt, string flowId = default)
         {
             return this.ConcurrentRaiseEvent(async (_, eventFunc) => await eventFunc(evt), flowId);
         }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual ValueTask OnConcurrentExecuted() => ValueTask.CompletedTask;
 
-        protected virtual Task RequestExecutor(List<TxEventTaskBox<SnapshotUnit<PrimaryKey, T>>> requests)
+        protected virtual Task RequestExecutor(List<TxEventTaskBox<SnapshotUnit<TPrimaryKey, T>>> requests)
         {
             if (requests.Count > 0)
-                return AutoTransactionExcute(requests);
+            {
+                return this.AutoTransactionExcute(requests);
+            }
             else
+            {
                 return Task.CompletedTask;
+            }
         }
 
-        private async Task AutoTransactionExcute(List<TxEventTaskBox<SnapshotUnit<PrimaryKey, T>>> requests)
+        private async Task AutoTransactionExcute(List<TxEventTaskBox<SnapshotUnit<TPrimaryKey, T>>> requests)
         {
             if (this.Logger.IsEnabled(LogLevel.Trace))
             {
@@ -83,7 +94,7 @@ namespace Vertex.Transaction.Actor
                 {
                     await request.Handler(this.Snapshot, async (evt) =>
                      {
-                         await base.TxRaiseEvent(evt, request.FlowId, request.TxId);
+                         await this.TxRaiseEvent(evt, request.FlowId, request.TxId);
                      });
                 }
 
@@ -100,7 +111,7 @@ namespace Vertex.Transaction.Actor
                 try
                 {
                     await this.Rollback();
-                    await ReTry(requests);
+                    await this.ReTry(requests);
                 }
                 catch (Exception ex)
                 {
@@ -111,7 +122,8 @@ namespace Vertex.Transaction.Actor
 
             await this.OnConcurrentExecuted();
         }
-        private async Task ReTry(List<TxEventTaskBox<SnapshotUnit<PrimaryKey, T>>> requests)
+
+        private async Task ReTry(List<TxEventTaskBox<SnapshotUnit<TPrimaryKey, T>>> requests)
         {
             foreach (var request in requests)
             {

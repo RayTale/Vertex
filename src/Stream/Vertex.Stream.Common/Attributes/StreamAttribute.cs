@@ -11,20 +11,27 @@ namespace Vertex.Stream.Common
         {
             this.Name = name;
             if (sharding < 0)
+            {
                 throw new ArgumentOutOfRangeException("sharding must be greater than 0");
+            }
+
             if (sharding == 0)
-                ShardingFunc = actorId => name;
+            {
+                this.ShardingFunc = actorId => name;
+            }
             else
             {
                 var tableNames = Enumerable.Range(0, sharding).Select(index => $"{name}_{index}").ToList();
                 var hash = new ConsistentHash(tableNames, tableNames.Count * 10);
-                ShardingFunc = actorId => hash.GetNode(actorId);
+                this.ShardingFunc = actorId => hash.GetNode(actorId);
             }
         }
+
         /// <summary>
         /// Listener name (if it is shadow, please set to null)
         /// </summary>
         public string Name { get; set; }
+
         public Func<string, string> ShardingFunc { get; init; }
     }
 }

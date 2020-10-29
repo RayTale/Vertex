@@ -8,7 +8,7 @@ namespace Vertex.Runtime.Serialization
 {
     public class DefaultJsonSerializer : ISerializer
     {
-        private static readonly JsonSerializerOptions options = new JsonSerializerOptions() { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
+        private static readonly JsonSerializerOptions Options = new JsonSerializerOptions() { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
 
         public T Deserialize<T>(string json)
         {
@@ -27,17 +27,17 @@ namespace Vertex.Runtime.Serialization
 
         public string Serialize<T>(T data)
         {
-            return JsonSerializer.Serialize(data, options);
+            return JsonSerializer.Serialize(data, Options);
         }
 
         public string Serialize(object data, Type type)
         {
-            return JsonSerializer.Serialize(data, type, options);
+            return JsonSerializer.Serialize(data, type, Options);
         }
 
         public byte[] SerializeToUtf8Bytes<T>(T data)
         {
-            return JsonSerializer.SerializeToUtf8Bytes(data, data.GetType(), options);
+            return JsonSerializer.SerializeToUtf8Bytes(data, data.GetType(), Options);
         }
 
         public T Deserialize<T>(byte[] bytes)
@@ -47,7 +47,7 @@ namespace Vertex.Runtime.Serialization
 
         public byte[] SerializeToUtf8Bytes(object data, Type type)
         {
-            return JsonSerializer.SerializeToUtf8Bytes(data, type, options);
+            return JsonSerializer.SerializeToUtf8Bytes(data, type, Options);
         }
 
         public object Deserialize(string json, Type type)

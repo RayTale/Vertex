@@ -22,6 +22,7 @@ namespace Vertex.TxRuntime.Test.Biz.Actors
         {
             return Task.FromResult(this.Snapshot);
         }
+
         public Task<SnapshotUnit<long, AccountSnapshot>> GetBackupSnapshot()
         {
             return Task.FromResult(this.BackupSnapshot);
@@ -38,27 +39,31 @@ namespace Vertex.TxRuntime.Test.Biz.Actors
             var evt = new TopupEvent
             {
                 Amount = amount,
-                Balance = Snapshot.Data.Balance + amount
+                Balance = this.Snapshot.Data.Balance + amount,
             };
-            await TxRaiseEvent(evt, flowId);
+            await this.TxRaiseEvent(evt, flowId);
         }
+
         public async Task NoTxTopUp(decimal amount, string flowId)
         {
             var evt = new TopupEvent
             {
                 Amount = amount,
-                Balance = Snapshot.Data.Balance + amount
+                Balance = this.Snapshot.Data.Balance + amount,
             };
-            await RaiseEvent(evt, flowId);
+            await this.RaiseEvent(evt, flowId);
         }
+
         public Task<bool> Commit_Test()
         {
             return this.Commit();
         }
+
         public Task Finish_Test()
         {
             return this.Finish();
         }
+
         public Task Rollbakc_Test()
         {
             return this.Rollback();
@@ -66,28 +71,31 @@ namespace Vertex.TxRuntime.Test.Biz.Actors
 
         public async Task<bool> Transfer(long toAccountId, decimal amount)
         {
-            if (Snapshot.Data.Balance >= amount)
+            if (this.Snapshot.Data.Balance >= amount)
             {
                 var evt = new TransferEvent
                 {
                     Amount = amount,
-                    Balance = Snapshot.Data.Balance - amount,
-                    ToId = toAccountId
+                    Balance = this.Snapshot.Data.Balance - amount,
+                    ToId = toAccountId,
                 };
-                await TxRaiseEvent(evt);
+                await this.TxRaiseEvent(evt);
                 return true;
             }
             else
+            {
                 return false;
+            }
         }
+
         public Task TransferArrived(decimal amount)
         {
             var evt = new TransferArrivedEvent
             {
                 Amount = amount,
-                Balance = Snapshot.Data.Balance + amount
+                Balance = this.Snapshot.Data.Balance + amount,
             };
-            return TxRaiseEvent(evt).AsTask();
+            return this.TxRaiseEvent(evt).AsTask();
         }
     }
 }

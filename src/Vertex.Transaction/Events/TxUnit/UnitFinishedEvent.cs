@@ -8,6 +8,7 @@ namespace Vertex.Transaction.Events.TxUnit
     public class UnitFinishedEvent : IEvent
     {
         public string TxId { get; set; }
+
         public TransactionStatus Status { get; set; }
     }
 }

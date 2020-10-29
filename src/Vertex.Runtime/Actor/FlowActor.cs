@@ -1,10 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Orleans;
-using Orleans.Concurrency;
-using Orleans.Runtime;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
@@ -13,6 +7,11 @@ using System.Linq.Expressions;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Orleans.Concurrency;
+using Orleans.Runtime;
 using Vertex.Abstractions.Actor;
 using Vertex.Abstractions.Attributes;
 using Vertex.Abstractions.Event;
@@ -29,18 +28,18 @@ using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Actor
 {
-    public abstract class FlowActor<PrimaryKey> : ActorBase<PrimaryKey>, IFlowActor
+    public abstract class FlowActor<TPrimaryKey> : ActorBase<TPrimaryKey>, IFlowActor
     {
-        private static readonly ConcurrentDictionary<Type, Func<object, IEvent, EventMeta, Task>> grainHandlerDict = new ConcurrentDictionary<Type, Func<object, IEvent, EventMeta, Task>>();
-        private static readonly ConcurrentDictionary<Type, EventDiscardAttribute> eventDiscardAttributeDict = new ConcurrentDictionary<Type, EventDiscardAttribute>();
-        private static readonly ConcurrentDictionary<Type, StrictHandleAttribute> eventStrictAttributerAttributeDict = new ConcurrentDictionary<Type, StrictHandleAttribute>();
+        private static readonly ConcurrentDictionary<Type, Func<object, IEvent, EventMeta, Task>> GrainHandlerDict = new ConcurrentDictionary<Type, Func<object, IEvent, EventMeta, Task>>();
+        private static readonly ConcurrentDictionary<Type, EventDiscardAttribute> EventDiscardAttributeDict = new ConcurrentDictionary<Type, EventDiscardAttribute>();
+        private static readonly ConcurrentDictionary<Type, StrictHandleAttribute> EventStrictAttributerAttributeDict = new ConcurrentDictionary<Type, StrictHandleAttribute>();
         private readonly Func<object, IEvent, EventMeta, Task> handlerInvokeFunc;
         private readonly EventDiscardAttribute discardAttribute;
 
         public FlowActor()
         {
             this.ConcurrentHandle = this.ActorType.GetCustomAttributes(typeof(EventReentrantAttribute), true).Length > 0;
-            this.discardAttribute = eventDiscardAttributeDict.GetOrAdd(this.ActorType, type =>
+            this.discardAttribute = EventDiscardAttributeDict.GetOrAdd(this.ActorType, type =>
             {
                 var handlerAttributes = this.ActorType.GetCustomAttributes(typeof(EventDiscardAttribute), false);
                 if (handlerAttributes.Length > 0)
@@ -52,7 +51,7 @@ namespace Vertex.Runtime.Actor
                     return default;
                 }
             });
-            var strictHandleAttributer = eventStrictAttributerAttributeDict.GetOrAdd(this.ActorType, type =>
+            var strictHandleAttributer = EventStrictAttributerAttributeDict.GetOrAdd(this.ActorType, type =>
             {
                 var handlerAttributes = this.ActorType.GetCustomAttributes(typeof(StrictHandleAttribute), false);
                 if (handlerAttributes.Length > 0)
@@ -65,7 +64,7 @@ namespace Vertex.Runtime.Actor
                 }
             });
             this.StrictHandle = strictHandleAttributer != default;
-            this.handlerInvokeFunc = grainHandlerDict.GetOrAdd(this.ActorType, type =>
+            this.handlerInvokeFunc = GrainHandlerDict.GetOrAdd(this.ActorType, type =>
             {
                 var methods = this.GetType().GetMethods().Where(m =>
                 {
@@ -159,6 +158,7 @@ namespace Vertex.Runtime.Actor
                 {
                     ilGen.MarkLabel(item.Label);
                     ilGen.Emit(OpCodes.Ldarg_0);
+
                     // Load the first parameter
                     if (item.Parameters[0].ParameterType == item.CaseType)
                     {
@@ -193,7 +193,6 @@ namespace Vertex.Runtime.Actor
                         {
                             ilGen.Emit(OpCodes.Ldarg_2);
                         }
-
                     }
 
                     ilGen.Emit(OpCodes.Call, item.Method);
@@ -223,7 +222,8 @@ namespace Vertex.Runtime.Actor
                 }
 
                 ilGen.Emit(OpCodes.Br, lastLable);
-                //last
+
+                // last
                 ilGen.MarkLabel(lastLable);
                 if (declare_1.LocalIndex > 0 && declare_1.LocalIndex <= 255)
                 {
@@ -239,6 +239,7 @@ namespace Vertex.Runtime.Actor
                 var body = Expression.Call(dynamicMethod, parames);
                 return Expression.Lambda<Func<object, IEvent, EventMeta, Task>>(body, parames).Compile();
             });
+
             // Load Event parameters
             static void LdEventArgs(SwitchMethodEmit item, ILGenerator gen)
             {
@@ -284,37 +285,47 @@ namespace Vertex.Runtime.Actor
                 }
             }
         }
+
         #region property
         protected SubActorOptions VertexOptions { get; private set; }
+
         public abstract IVertexActor Vertex { get; }
+
         protected ILogger Logger { get; private set; }
 
         protected ISerializer Serializer { get; private set; }
 
         protected IEventTypeContainer EventTypeContainer { get; private set; }
+
         /// <summary>
         /// Memory state, restored by snapshot + Event play or replay
         /// </summary>
-        protected SubSnapshot<PrimaryKey> Snapshot { get; set; }
+        protected SubSnapshot<TPrimaryKey> Snapshot { get; set; }
+
         /// <summary>
         /// The event version number of the snapshot
         /// </summary>
         protected long ActivateSnapshotVersion { get; private set; }
-        public ISubSnapshotStorage<PrimaryKey> SnapshotStorage { get; private set; }
+
+        public ISubSnapshotStorage<TPrimaryKey> SnapshotStorage { get; private set; }
+
         /// <summary>
         /// Whether to enable concurrent event processing
         /// </summary>
         protected bool ConcurrentHandle { get; set; }
+
         /// <summary>
         /// Is the incident strictly checked for handle
         /// </summary>
         protected bool StrictHandle { get; set; }
+
         /// <summary>
         /// List of unprocessed events
         /// </summary>
-        private List<EventUnit<PrimaryKey>> UnprocessedEventList { get; set; } = new List<EventUnit<PrimaryKey>>();
+        private List<EventUnit<TPrimaryKey>> UnprocessedEventList { get; set; } = new List<EventUnit<TPrimaryKey>>();
         #endregion
         #region Activate
+
         /// <summary>
         /// Unified method of dependency injection
         /// </summary>
@@ -329,21 +340,24 @@ namespace Vertex.Runtime.Actor
             var snapshotStorageFactory = this.ServiceProvider.GetService<ISubSnapshotStorageFactory>();
             this.SnapshotStorage = await snapshotStorageFactory.Create(this);
         }
+
         public override async Task OnActivateAsync()
         {
             await base.OnActivateAsync();
-            await DependencyInjection();
+            await this.DependencyInjection();
 
             if (this.ConcurrentHandle)
             {
-                this.UnprocessedEventList = new List<EventUnit<PrimaryKey>>();
+                this.UnprocessedEventList = new List<EventUnit<TPrimaryKey>>();
             }
 
             try
             {
                 await this.ReadSnapshotAsync();
                 if (this.Snapshot.Version != 0 || this.VertexOptions.InitType == SubInitType.ZeroVersion)
+                {
                     await this.Recovery();
+                }
 
                 if (this.Logger.IsEnabled(LogLevel.Trace))
                 {
@@ -356,6 +370,7 @@ namespace Vertex.Runtime.Actor
                 throw;
             }
         }
+
         protected virtual async Task ReadSnapshotAsync()
         {
             try
@@ -385,22 +400,23 @@ namespace Vertex.Runtime.Actor
         /// <returns></returns>
         protected virtual ValueTask CreateSnapshot()
         {
-            this.Snapshot = new SubSnapshot<PrimaryKey>
+            this.Snapshot = new SubSnapshot<TPrimaryKey>
             {
                 ActorId = this.ActorId
             };
             return ValueTask.CompletedTask;
         }
+
         /// <summary>
         /// Restore from library
         /// </summary>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task Recovery()
         {
             while (true)
             {
                 var documentList = await this.Vertex.GetEventDocuments(this.Snapshot.Version + 1, this.Snapshot.Version + this.VertexOptions.EventPageSize);
-                var evtList = ConvertToEventUnitList(documentList);
+                var evtList = this.ConvertToEventUnitList(documentList);
                 await this.UnsafeTell(evtList);
                 if (documentList.Count < this.VertexOptions.EventPageSize)
                 {
@@ -408,16 +424,17 @@ namespace Vertex.Runtime.Actor
                 }
             }
         }
-        private List<EventUnit<PrimaryKey>> ConvertToEventUnitList(IList<EventDocumentDto> documents)
+
+        private List<EventUnit<TPrimaryKey>> ConvertToEventUnitList(IList<EventDocumentDto> documents)
         {
             return documents.Select(document =>
              {
-                 if (!EventTypeContainer.TryGet(document.Name, out var type))
+                 if (!this.EventTypeContainer.TryGet(document.Name, out var type))
                  {
                      throw new NoNullAllowedException($"event name of {document.Name}");
                  }
-                 var data = Serializer.Deserialize(document.Data, type);
-                 return new EventUnit<PrimaryKey>
+                 var data = this.Serializer.Deserialize(document.Data, type);
+                 return new EventUnit<TPrimaryKey>
                  {
                      ActorId = this.ActorId,
                      Event = data as IEvent,
@@ -426,6 +443,7 @@ namespace Vertex.Runtime.Actor
              }).ToList();
         }
         #endregion
+
         public Task OnNext(Immutable<byte[]> bytes)
         {
             return this.OnNext(bytes.Value);
@@ -443,7 +461,7 @@ namespace Vertex.Runtime.Actor
 
                 var evtList = items.Value.Select(bytes =>
                 {
-                    if (TryConvertToEventUnit(bytes, out var data))
+                    if (this.TryConvertToEventUnit(bytes, out var data))
                     {
                         return data;
                     }
@@ -472,7 +490,7 @@ namespace Vertex.Runtime.Actor
 
         private async Task OnNext(byte[] bytes)
         {
-            if (TryConvertToEventUnit(bytes, out var data))
+            if (this.TryConvertToEventUnit(bytes, out var data))
             {
                 await this.Tell(data);
                 if (this.Logger.IsEnabled(LogLevel.Trace))
@@ -485,7 +503,8 @@ namespace Vertex.Runtime.Actor
                 this.Logger.LogError(new ArgumentException(nameof(bytes)), "Deserialization failed");
             }
         }
-        protected bool TryConvertToEventUnit(byte[] bytes, out EventUnit<PrimaryKey> eventUnit)
+
+        protected bool TryConvertToEventUnit(byte[] bytes, out EventUnit<TPrimaryKey> eventUnit)
         {
             if (EventConverter.TryParseWithNoId(bytes, out var transport) &&
                    this.EventTypeContainer.TryGet(transport.EventName, out var type))
@@ -494,7 +513,7 @@ namespace Vertex.Runtime.Actor
                 if (data is IEvent @event)
                 {
                     var eventMeta = transport.MetaBytes.ParseToEventMeta();
-                    eventUnit = new EventUnit<PrimaryKey>
+                    eventUnit = new EventUnit<TPrimaryKey>
                     {
                         ActorId = this.ActorId,
                         Meta = eventMeta,
@@ -506,43 +525,47 @@ namespace Vertex.Runtime.Actor
             eventUnit = default;
             return false;
         }
+
         public Task DefaultHandler(IEvent evt)
         {
-            if (StrictHandle && (this.discardAttribute is null || !this.discardAttribute.Discards.Contains(evt.GetType())))
+            if (this.StrictHandle && (this.discardAttribute is null || !this.discardAttribute.Discards.Contains(evt.GetType())))
             {
                 throw new MissingMethodException(evt.GetType().FullName);
             }
             return Task.CompletedTask;
         }
-        protected async ValueTask Tell(EventUnit<PrimaryKey> eventUnit)
+
+        protected async ValueTask Tell(EventUnit<TPrimaryKey> eventUnit)
         {
             try
             {
                 if (eventUnit.Meta.Version <= this.Snapshot.Version)
+                {
                     return;
+                }
 
                 if (eventUnit.Meta.Version == this.Snapshot.Version + 1)
                 {
                     await this.EventDelivered(eventUnit);
 
-                    this.Snapshot.FullUpdateVersion(eventUnit.Meta, this.ActorType);//Version of the update process
+                    this.Snapshot.FullUpdateVersion(eventUnit.Meta, this.ActorType); // Version of the update process
                 }
                 else if (eventUnit.Meta.Version > this.Snapshot.Version)
                 {
                     var documents = await this.Vertex.GetEventDocuments(this.Snapshot.Version + 1, eventUnit.Meta.Version - 1);
-                    var eventList = ConvertToEventUnitList(documents);
+                    var eventList = this.ConvertToEventUnitList(documents);
                     foreach (var evt in eventList)
                     {
                         await this.EventDelivered(evt);
 
-                        this.Snapshot.FullUpdateVersion(evt.Meta, this.ActorType);//Version of the update process
+                        this.Snapshot.FullUpdateVersion(evt.Meta, this.ActorType); // Version of the update process
                     }
                 }
 
                 if (eventUnit.Meta.Version == this.Snapshot.Version + 1)
                 {
                     await this.EventDelivered(eventUnit);
-                    this.Snapshot.FullUpdateVersion(eventUnit.Meta, this.ActorType);//Version of the update process
+                    this.Snapshot.FullUpdateVersion(eventUnit.Meta, this.ActorType); // Version of the update process
                 }
 
                 if (eventUnit.Meta.Version > this.Snapshot.Version)
@@ -558,7 +581,8 @@ namespace Vertex.Runtime.Actor
                 throw;
             }
         }
-        protected async Task ConcurrentTell(IEnumerable<EventUnit<PrimaryKey>> inputs)
+
+        protected async Task ConcurrentTell(IEnumerable<EventUnit<TPrimaryKey>> inputs)
         {
             var startVersion = this.Snapshot.Version;
             if (this.UnprocessedEventList.Count > 0)
@@ -572,7 +596,7 @@ namespace Vertex.Runtime.Actor
                 if (startVersion + evtList.Count < inputLast.Meta.Version)
                 {
                     var documents = await this.Vertex.GetEventDocuments(startVersion + 1, inputLast.Meta.Version - 1);
-                    var loadList = ConvertToEventUnitList(documents);
+                    var loadList = this.ConvertToEventUnitList(documents);
                     this.UnprocessedEventList.AddRange(loadList);
                     this.UnprocessedEventList.Add(inputLast);
                 }
@@ -591,7 +615,8 @@ namespace Vertex.Runtime.Actor
                 this.UnprocessedEventList.Clear();
             }
         }
-        protected virtual async Task UnsafeTell(IEnumerable<EventUnit<PrimaryKey>> eventList)
+
+        protected virtual async Task UnsafeTell(IEnumerable<EventUnit<TPrimaryKey>> eventList)
         {
             if (this.ConcurrentHandle)
             {
@@ -606,16 +631,17 @@ namespace Vertex.Runtime.Actor
             {
                 foreach (var @event in eventList)
                 {
-                    this.Snapshot.IncrementDoingVersion(this.ActorType);//Mark the Version to be processed
+                    this.Snapshot.IncrementDoingVersion(this.ActorType); // Mark the Version to be processed
                     await this.EventDelivered(@event);
 
-                    this.Snapshot.UpdateVersion(@event.Meta, this.ActorType);//Version of the update process
+                    this.Snapshot.UpdateVersion(@event.Meta, this.ActorType); // Version of the update process
                 }
             }
 
             await this.SaveSnapshotAsync();
         }
-        protected virtual ValueTask EventDelivered(EventUnit<PrimaryKey> eventUnit)
+
+        protected virtual ValueTask EventDelivered(EventUnit<TPrimaryKey> eventUnit)
         {
             try
             {
@@ -628,8 +654,9 @@ namespace Vertex.Runtime.Actor
                 throw;
             }
         }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual ValueTask OnEventDelivered(EventUnit<PrimaryKey> eventUnit)
+        protected virtual ValueTask OnEventDelivered(EventUnit<TPrimaryKey> eventUnit)
         {
             return new ValueTask(this.handlerInvokeFunc(this, eventUnit.Event, eventUnit.Meta));
         }
@@ -647,7 +674,7 @@ namespace Vertex.Runtime.Actor
             {
                 try
                 {
-                    await this.OnSaveSnapshot();//Custom save items
+                    await this.OnSaveSnapshot(); // Custom save items
 
                     if (this.ActivateSnapshotVersion == 0)
                     {
@@ -673,6 +700,5 @@ namespace Vertex.Runtime.Actor
                 }
             }
         }
-
     }
 }

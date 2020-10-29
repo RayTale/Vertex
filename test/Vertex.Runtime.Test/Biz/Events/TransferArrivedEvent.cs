@@ -7,6 +7,7 @@ namespace Vertex.Runtime.Test.Events
     public class TransferArrivedEvent : IEvent
     {
         public decimal Amount { get; set; }
+
         public decimal Balance { get; set; }
     }
 }

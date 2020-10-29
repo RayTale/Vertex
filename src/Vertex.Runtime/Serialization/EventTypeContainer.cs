@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using Vertex.Abstractions.Event;
 using Vertex.Utils;
 using Vertext.Abstractions.Event;
@@ -40,6 +40,7 @@ namespace Vertex.Runtime.Serialization
                 }
             }
         }
+
         public bool TryGet(string name, out Type type)
         {
             var value = this.nameDict.GetOrAdd(name, key =>

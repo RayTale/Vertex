@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -16,31 +15,32 @@ namespace Vertex.Utils.Channels
     public class BufferBlockChannel<T> : IMpscChannel<T>, ISequenceMpscChannel
     {
         private readonly BufferBlock<T> buffer = new BufferBlock<T>();
-        private Func<List<T>, Task> consumer;
         private readonly List<ISequenceMpscChannel> consumerSequence = new List<ISequenceMpscChannel>();
-        private Task<bool> waitToReadTask;
         private readonly ILogger logger;
+        private Task<bool> waitToReadTask;
+        private Func<List<T>, Task> consumer;
 
         /// <summary>
         /// The maximum amount of data processed each time in batch data processing
         /// </summary>
-        private int MaxBatchSize;
+        private int maxBatchSize;
 
         /// <summary>
         /// Maximum delay of batch data reception
         /// </summary>
-        private int MaxMillisecondsDelay;
+        private int maxMillisecondsDelay;
 
         public BufferBlockChannel(ILogger<BufferBlockChannel<T>> logger, IOptions<ChannelOptions> options)
         {
             this.logger = logger;
-            this.MaxBatchSize = options.Value.MaxBatchSize;
-            this.MaxMillisecondsDelay = options.Value.MaxMillisecondsDelay;
+            this.maxBatchSize = options.Value.MaxBatchSize;
+            this.maxMillisecondsDelay = options.Value.MaxMillisecondsDelay;
         }
 
         public bool IsDisposed { get; private set; }
 
         public bool IsChildren { get; set; }
+
         public bool Running { get; private set; }
 
         public void BindConsumer(Func<List<T>, Task> consumer, bool active = true)
@@ -49,7 +49,9 @@ namespace Vertex.Utils.Channels
             {
                 this.consumer = consumer;
                 if (active)
-                    ThreadPool.UnsafeQueueUserWorkItem(async state => await this.ActiveAutoConsumer(), null);
+                {
+                    _ = ThreadPool.UnsafeQueueUserWorkItem(async state => await this.ActiveAutoConsumer(), null);
+                }
             }
             else
             {
@@ -59,8 +61,8 @@ namespace Vertex.Utils.Channels
 
         public void Config(int maxBatchSize, int maxMillisecondsDelay)
         {
-            this.MaxBatchSize = maxBatchSize;
-            this.MaxMillisecondsDelay = maxMillisecondsDelay;
+            this.maxBatchSize = maxBatchSize;
+            this.maxMillisecondsDelay = maxMillisecondsDelay;
         }
 
         public async ValueTask<bool> WriteAsync(T data)
@@ -80,7 +82,7 @@ namespace Vertex.Utils.Channels
 
         private async Task ActiveAutoConsumer()
         {
-            Running = true;
+            this.Running = true;
             while (!this.IsDisposed)
             {
                 try
@@ -93,13 +95,16 @@ namespace Vertex.Utils.Channels
                     this.logger.LogError(ex, ex.Message);
                 }
             }
-            Running = false;
+            this.Running = false;
         }
 
         public void Join(ISequenceMpscChannel channel)
         {
             if (channel.Running)
+            {
                 throw new ArgumentException("not allowed to join the running channel");
+            }
+
             if (this.consumerSequence.IndexOf(channel) == -1)
             {
                 channel.IsChildren = true;
@@ -116,11 +121,11 @@ namespace Vertex.Utils.Channels
                 while (this.buffer.TryReceive(out var value))
                 {
                     dataList.Add(value);
-                    if (dataList.Count > this.MaxBatchSize)
+                    if (dataList.Count > this.maxBatchSize)
                     {
                         break;
                     }
-                    else if ((DateTimeOffset.UtcNow - startTime).TotalMilliseconds > this.MaxMillisecondsDelay)
+                    else if ((DateTimeOffset.UtcNow - startTime).TotalMilliseconds > this.maxMillisecondsDelay)
                     {
                         break;
                     }
@@ -148,9 +153,9 @@ namespace Vertex.Utils.Channels
             else
             {
                 var tasks = new Task<bool>[this.consumerSequence.Count + 1];
-                for (int i = 0; i < consumerSequence.Count; i++)
+                for (int i = 0; i < this.consumerSequence.Count; i++)
                 {
-                    tasks[i] = consumerSequence[i].WaitToReadAsync();
+                    tasks[i] = this.consumerSequence[i].WaitToReadAsync();
                 }
                 tasks[^1] = this.waitToReadTask;
                 return await await Task.WhenAny(tasks);

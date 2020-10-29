@@ -10,7 +10,7 @@ using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Snapshot
 {
-    public abstract class SnapshotHandlerBase<PrimaryKey, T> : ISnapshotHandler<PrimaryKey, T>
+    public abstract class SnapshotHandlerBase<TPrimaryKey, T> : ISnapshotHandler<TPrimaryKey, T>
           where T : ISnapshot
     {
         private readonly Action<object, T, IEvent, EventMeta> handlerInvokeFunc;
@@ -32,11 +32,11 @@ namespace Vertex.Runtime.Snapshot
             var handlerStrictAttributes = thisType.GetCustomAttributes(typeof(StrictHandleAttribute), false);
             if (handlerStrictAttributes.Length > 0)
             {
-                eventStrictAttributer = (StrictHandleAttribute)handlerStrictAttributes[0];
+                this.eventStrictAttributer = (StrictHandleAttribute)handlerStrictAttributes[0];
             }
             else
             {
-                eventStrictAttributer = default;
+                this.eventStrictAttributer = default;
             }
             var methods = this.GetType().GetMethods().Where(m =>
             {
@@ -128,7 +128,8 @@ namespace Vertex.Runtime.Snapshot
             {
                 ilGen.MarkLabel(item.Label);
                 ilGen.Emit(OpCodes.Ldarg_0);
-                //加载第一个参数
+
+                // 加载第一个参数
                 if (item.Parameters[0].ParameterType == typeof(T))
                 {
                     ilGen.Emit(OpCodes.Ldarg_1);
@@ -142,7 +143,7 @@ namespace Vertex.Runtime.Snapshot
                     LdEventArgs(item, ilGen);
                 }
 
-                //加载第二个参数
+                // 加载第二个参数
                 if (item.Parameters[1].ParameterType == typeof(T))
                 {
                     ilGen.Emit(OpCodes.Ldarg_1);
@@ -156,7 +157,7 @@ namespace Vertex.Runtime.Snapshot
                     LdEventArgs(item, ilGen);
                 }
 
-                //加载第三个参数
+                // 加载第三个参数
                 if (item.Parameters.Length == 3)
                 {
                     if (item.Parameters[1].ParameterType == typeof(T))
@@ -185,7 +186,8 @@ namespace Vertex.Runtime.Snapshot
             var parames = new ParameterExpression[] { Expression.Parameter(typeof(object)), Expression.Parameter(typeof(T)), Expression.Parameter(typeof(IEvent)), Expression.Parameter(typeof(EventMeta)) };
             var body = Expression.Call(dynamicMethod, parames);
             this.handlerInvokeFunc = Expression.Lambda<Action<object, T, IEvent, EventMeta>>(body, parames).Compile();
-            //加载Event参数
+
+            // 加载Event参数
             static void LdEventArgs(SwitchMethodEmit item, ILGenerator gen)
             {
                 if (item.Index > 3)
@@ -230,17 +232,16 @@ namespace Vertex.Runtime.Snapshot
                 }
             }
         }
-        public void Apply(SnapshotUnit<PrimaryKey, T> snapshotBox, EventUnit<PrimaryKey> eventBox)
+
+        public void Apply(SnapshotUnit<TPrimaryKey, T> snapshotBox, EventUnit<TPrimaryKey> eventBox)
         {
             this.handlerInvokeFunc(this, snapshotBox.Data, eventBox.Event, eventBox.Meta);
         }
+
         public void DefaultHandler(IEvent evt)
         {
-            if (this.eventStrictAttributer != default &&
-                    (
-                    this.eventDiscardAttribute is null || !this.eventDiscardAttribute.Discards.Contains(evt.GetType())
-                    )
-                )
+            if (this.eventStrictAttributer != default
+                && (this.eventDiscardAttribute is null || !this.eventDiscardAttribute.Discards.Contains(evt.GetType())))
             {
                 throw new NotSupportedException(evt.GetType().ToString());
             }

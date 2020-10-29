@@ -1,6 +1,6 @@
-﻿using Orleans.TestingHost;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
+using Orleans.TestingHost;
 using Vertex.Abstractions.InnerService;
 using Vertex.Runtime.Core;
 using Xunit;
@@ -10,16 +10,17 @@ namespace Vertex.Runtime.Test.InnerService
     [Collection(ClusterCollection.Name)]
     public class LockActor_Test
     {
-        private readonly TestCluster _cluster;
+        private readonly TestCluster cluster;
 
         public LockActor_Test(ClusterFixture fixture)
         {
-            _cluster = fixture.Cluster;
+            this.cluster = fixture.Cluster;
         }
+
         [Fact]
         public async Task LockActor()
         {
-            var lockActor = _cluster.GrainFactory.GetGrain<ILockActor>("0");
+            var lockActor = this.cluster.GrainFactory.GetGrain<ILockActor>("0");
             var lockResult = await lockActor.Lock(30 * 1000);
             Assert.True(lockResult);
             var lockTask = lockActor.Lock(30 * 1000);
@@ -30,10 +31,11 @@ namespace Vertex.Runtime.Test.InnerService
             Assert.True(lockTask.IsCompletedSuccessfully);
             await lockActor.Unlock();
         }
+
         [Fact]
         public async Task LockActor_Timeout()
         {
-            var lockActor = _cluster.GrainFactory.GetGrain<ILockActor>("2");
+            var lockActor = this.cluster.GrainFactory.GetGrain<ILockActor>("2");
             var lockResult = await lockActor.Lock(3 * 1000);
             Assert.True(lockResult);
             var lockTask = lockActor.Lock(2 * 1000);
@@ -42,10 +44,11 @@ namespace Vertex.Runtime.Test.InnerService
             Assert.False(lockTask.Result);
             await lockActor.Unlock();
         }
+
         [Fact]
         public async Task LockActor_Timeout_0()
         {
-            var lockActor = _cluster.GrainFactory.GetGrain<ILockActor>("3");
+            var lockActor = this.cluster.GrainFactory.GetGrain<ILockActor>("3");
             var lockResult = await lockActor.Lock(3 * 1000);
             Assert.True(lockResult);
             var lockTask = lockActor.Lock();
@@ -53,12 +56,13 @@ namespace Vertex.Runtime.Test.InnerService
             Assert.False(lockTask.IsCompletedSuccessfully);
             await lockActor.Unlock();
         }
+
         [Theory]
         [InlineData(10)]
         [InlineData(100)]
         public async Task LockActor_Concurrent(int count)
         {
-            var lockActor = _cluster.GrainFactory.GetGrain<ILockActor>("1");
+            var lockActor = this.cluster.GrainFactory.GetGrain<ILockActor>("1");
             var lockResult = await lockActor.Lock(30 * 1000);
             Assert.True(lockResult);
             var taskList = Enumerable.Range(0, count).Select(i => lockActor.Lock(30 * 1000)).ToList();

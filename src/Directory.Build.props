@@ -1,0 +1,7 @@
+<Project>
+  <Import Project="..\Directory.Build.props" />
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub"/>
+  </ItemGroup>
+</Project>

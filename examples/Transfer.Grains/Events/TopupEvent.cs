@@ -7,6 +7,7 @@ namespace Transfer.Grains.Events
     public class TopupEvent : IEvent
     {
         public decimal Amount { get; set; }
+
         public decimal Balance { get; set; }
     }
 }

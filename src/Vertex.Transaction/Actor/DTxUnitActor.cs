@@ -1,12 +1,12 @@
-﻿using IdGen;
-using Microsoft.Extensions.Logging;
-using Orleans;
-using Orleans.Runtime;
-using System;
+﻿using System;
 using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using IdGen;
+using Microsoft.Extensions.Logging;
+using Orleans;
+using Orleans.Runtime;
 using Vertex.Runtime;
 using Vertex.Transaction.Abstractions;
 using Vertex.Transaction.Abstractions.IActor;
@@ -15,20 +15,21 @@ using Vertex.Transaction.Snapshot;
 
 namespace Vertex.Transaction.Actor
 {
-    public abstract class DTxUnitActor<PrimaryKey, TRequest, TResponse> :
-        ReentryActor<PrimaryKey, TxUnitSnapshot<TRequest>>,
+    public abstract class DTxUnitActor<TPrimaryKey, TRequest, TResponse> :
+        ReentryActor<TPrimaryKey, TxUnitSnapshot<TRequest>>,
         IDTxUnitActor<TRequest, TResponse>,
         IRemindable
         where TRequest : class, new()
     {
+        private const string ReminderName = "monitor";
+        private static readonly AsyncLocal<DTxCommit<TRequest>> CurrentCommit = new AsyncLocal<DTxCommit<TRequest>>();
         private readonly IdGenerator idGen = new IdGenerator(0);
-        private readonly static AsyncLocal<DTxCommit<TRequest>> currentCommit = new AsyncLocal<DTxCommit<TRequest>>();
-        private const string reminderName = "monitor";
         private IDisposable timer;
+
         public override async Task OnActivateAsync()
         {
             await base.OnActivateAsync();
-            timer = this.RegisterTimer(
+            this.timer = this.RegisterTimer(
                 async state =>
                 {
                     foreach (var commit in this.Snapshot.Data.RequestDict.Values.Where(o => (DateTimeOffset.UtcNow.ToUnixTimeSeconds() - o.Timestamp) >= 60).ToList())
@@ -36,14 +37,14 @@ namespace Vertex.Transaction.Actor
                         try
                         {
                             var actors = this.EffectActors(commit.Data);
-                            currentCommit.Value = commit;
+                            CurrentCommit.Value = commit;
                             if (commit.Status == TransactionStatus.WaitingCommit)
                             {
-                                await Rollback(actors);
+                                await this.Rollback(actors);
                             }
                             else if (commit.Status == TransactionStatus.Commited)
                             {
-                                await Finish(actors);
+                                await this.Finish(actors);
                             }
                         }
                         catch (Exception ex)
@@ -55,35 +56,38 @@ namespace Vertex.Transaction.Actor
                 new TimeSpan(0, 0, 5),
                 new TimeSpan(0, 0, 30));
         }
+
         public override async Task OnDeactivateAsync()
         {
             if (this.Snapshot.Data.RequestDict.Count > 0)
             {
-                await RegisterOrUpdateReminder(reminderName, new TimeSpan(0, 3, 0), new TimeSpan(0, 5, 0));
+                await this.RegisterOrUpdateReminder(ReminderName, new TimeSpan(0, 3, 0), new TimeSpan(0, 5, 0));
             }
             else
             {
-                var reminder = await GetReminder(reminderName);
+                var reminder = await this.GetReminder(ReminderName);
                 if (reminder != default)
                 {
-                    await UnregisterReminder(reminder);
+                    await this.UnregisterReminder(reminder);
                 }
             }
-            timer.Dispose();
+            this.timer.Dispose();
             await base.OnDeactivateAsync();
         }
+
         public Task ReceiveReminder(string reminderName, TickStatus status)
         {
             return Task.CompletedTask;
         }
+
         protected async Task Commit()
         {
-            var actors = this.EffectActors(currentCommit.Value.Data);
-            var commit = currentCommit.Value;
+            var actors = this.EffectActors(CurrentCommit.Value.Data);
+            var commit = CurrentCommit.Value;
             try
             {
-                await ConcurrentRaiseEvent(new UnitCommitEvent { TxId = commit.TxId, Data = Serializer.Serialize(commit), StartTime = commit.Timestamp });
-                await Commit(actors);
+                await this.ConcurrentRaiseEvent(new UnitCommitEvent { TxId = commit.TxId, Data = this.Serializer.Serialize(commit), StartTime = commit.Timestamp });
+                await this.Commit(actors);
                 await this.Finish(actors);
             }
             catch (Exception ex)
@@ -95,38 +99,43 @@ namespace Vertex.Transaction.Actor
 
         protected Task Rollback()
         {
-            return this.Rollback(this.EffectActors(currentCommit.Value.Data));
+            return this.Rollback(this.EffectActors(CurrentCommit.Value.Data));
         }
+
         public async Task<TResponse> Ask(TRequest request)
         {
-            currentCommit.Value = new DTxCommit<TRequest>
+            CurrentCommit.Value = new DTxCommit<TRequest>
             {
-                TxId = $"{this.ActorType.Name}_{this.ActorId}_{idGen.CreateId()}",
+                TxId = $"{this.ActorType.Name}_{this.ActorId}_{this.idGen.CreateId()}",
                 Status = TransactionStatus.None,
                 Data = request,
                 Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
             };
-            RequestContext.Set(RequestContextKeys.txIdKey, currentCommit.Value.TxId);
-            RequestContext.Set(RuntimeConsts.EventFlowIdKey, FlowId(request));
+            RequestContext.Set(RequestContextKeys.TxIdKey, CurrentCommit.Value.TxId);
+            RequestContext.Set(RuntimeConsts.EventFlowIdKey, this.FlowId(request));
             return await this.Work(request);
         }
+
         public abstract string FlowId(TRequest request);
+
         public abstract Task<TResponse> Work(TRequest request);
+
         protected abstract IDTxActor[] EffectActors(TRequest request);
+
         private async Task Rollback(IDTxActor[] actors)
         {
             if (actors is null || actors.Length == 0)
             {
                 throw new NotImplementedException(nameof(this.EffectActors));
             }
-            var commit = currentCommit.Value;
+            var commit = CurrentCommit.Value;
             if (commit.Status != TransactionStatus.Successed && commit.Status != TransactionStatus.Commited)
             {
-                RequestContext.Set(RequestContextKeys.txIdKey, commit.TxId);
+                RequestContext.Set(RequestContextKeys.TxIdKey, commit.TxId);
                 await Task.WhenAll(actors.Select(a => a.Rollback()));
                 if (this.Snapshot.Data.RequestDict.ContainsKey(commit.TxId))
                 {
-                    await ConcurrentRaiseEvent(new UnitFinishedEvent { TxId = commit.TxId, Status = TransactionStatus.Rollbacked });
+                    await this.ConcurrentRaiseEvent(new UnitFinishedEvent { TxId = commit.TxId, Status = TransactionStatus.Rollbacked });
                 }
             }
             else
@@ -134,29 +143,34 @@ namespace Vertex.Transaction.Actor
                 throw new ArgumentOutOfRangeException(commit.Status.ToString());
             }
         }
+
         private async Task Commit(IDTxActor[] actors)
         {
             if (actors is null || actors.Length == 0)
             {
                 throw new NotImplementedException(nameof(this.EffectActors));
             }
-            var commit = currentCommit.Value;
-            RequestContext.Set(RequestContextKeys.txIdKey, commit.TxId);
+            var commit = CurrentCommit.Value;
+            RequestContext.Set(RequestContextKeys.TxIdKey, commit.TxId);
             var results = await Task.WhenAll(actors.Select(a => a.Commit()));
             if (!results.All(o => o))
+            {
                 throw new System.Transactions.TransactionException(nameof(commit));
-            await ConcurrentRaiseEvent(new UnitCommitedEvent { TxId = commit.TxId });
+            }
+
+            await this.ConcurrentRaiseEvent(new UnitCommitedEvent { TxId = commit.TxId });
         }
+
         private async Task Finish(IDTxActor[] actors)
         {
             if (actors is null || actors.Length == 0)
             {
                 throw new NotImplementedException(nameof(this.EffectActors));
             }
-            var commit = currentCommit.Value;
-            RequestContext.Set(RequestContextKeys.txIdKey, commit.TxId);
+            var commit = CurrentCommit.Value;
+            RequestContext.Set(RequestContextKeys.TxIdKey, commit.TxId);
             await Task.WhenAll(actors.Select(a => a.Finish()));
-            await ConcurrentRaiseEvent(new UnitFinishedEvent { TxId = commit.TxId, Status = TransactionStatus.Successed });
+            await this.ConcurrentRaiseEvent(new UnitFinishedEvent { TxId = commit.TxId, Status = TransactionStatus.Successed });
         }
     }
 }

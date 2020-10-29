@@ -5,6 +5,6 @@
         /// <summary>
         /// Transaction timeout time(default is 30s)
         /// </summary>
-        public int TxSecondsTimeout{ get; set; } = 30;
+        public int TxSecondsTimeout { get; set; } = 30;
     }
 }

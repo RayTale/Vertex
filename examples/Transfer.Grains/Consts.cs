@@ -2,6 +2,6 @@
 {
     public class Consts
     {
-        public const string core_db_Name = "coredb";
+        public const string CoreDbName = "coredb";
     }
 }

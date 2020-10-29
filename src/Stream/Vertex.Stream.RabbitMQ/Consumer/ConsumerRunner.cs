@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using RabbitMQ.Client;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using RabbitMQ.Client;
 using Vertex.Stream.Common;
 using Vertex.Stream.RabbitMQ.Client;
 using Vertex.Stream.RabbitMQ.Options;
@@ -15,11 +15,12 @@ namespace Vertex.Stream.RabbitMQ.Consumer
 {
     public class ConsumerRunner
     {
-        private static readonly TimeSpan whileTimeoutSpan = TimeSpan.FromMilliseconds(100);
-        private bool isFirst = true;
-        private bool closed;
+        private static readonly TimeSpan WhileTimeoutSpan = TimeSpan.FromMilliseconds(100);
         private readonly IStreamSubHandler streamSubHandler;
         private readonly ConsumerOptions consumerOptions;
+        private bool isFirst = true;
+        private bool closed;
+
         public ConsumerRunner(
             IServiceProvider provider,
             QueueInfo queue)
@@ -63,7 +64,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                     {
                         while (true)
                         {
-                            var whileResult = this.Model.Model.BasicGet(this.Queue.Queue, consumerOptions.AutoAck);
+                            var whileResult = this.Model.Model.BasicGet(this.Queue.Queue, this.consumerOptions.AutoAck);
                             if (whileResult is null)
                             {
                                 break;
@@ -86,7 +87,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                         }
                         else
                         {
-                            await Task.Delay(whileTimeoutSpan);
+                            await Task.Delay(WhileTimeoutSpan);
                         }
                     }
                     catch (Exception exception)
@@ -96,7 +97,6 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                         {
                             this.Model.Model.BasicReject(((BasicGetResult)item.Origin).DeliveryTag, true);
                         }
-
                     }
                     finally
                     {
@@ -120,18 +120,18 @@ namespace Vertex.Stream.RabbitMQ.Consumer
             {
                 if (list.Count > 1)
                 {
-                    await Task.WhenAll(Queue.SubActorType.Select(subType => this.streamSubHandler.EventHandler(subType, list)));
+                    await Task.WhenAll(this.Queue.SubActorType.Select(subType => this.streamSubHandler.EventHandler(subType, list)));
                 }
                 else if (list.Count == 1)
                 {
-                    await Task.WhenAll(Queue.SubActorType.Select(subType => this.streamSubHandler.EventHandler(subType, list[0])));
+                    await Task.WhenAll(this.Queue.SubActorType.Select(subType => this.streamSubHandler.EventHandler(subType, list[0])));
                 }
             }
             catch
             {
-                if (consumerOptions.RetryCount >= times)
+                if (this.consumerOptions.RetryCount >= times)
                 {
-                    await Task.Delay(consumerOptions.RetryIntervals);
+                    await Task.Delay(this.consumerOptions.RetryIntervals);
                     await this.Notice(list.Where(o => !o.Success).ToList(), times + 1);
                 }
                 else

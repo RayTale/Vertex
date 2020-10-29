@@ -1,29 +1,30 @@
-﻿using Orleans;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Vertex.Abstractions.Exceptions;
+using Orleans;
 using Vertex.Abstractions.Actor;
+using Vertex.Abstractions.Exceptions;
 using Vertex.Abstractions.Storage;
 using Vertex.Storage.EFCore.Storage;
 using Vertex.Storage.Linq2db.Core;
 using Vertex.Storage.Linq2db.Db;
 using Vertex.Storage.Linq2db.Entities;
 using Vertex.Storage.Linq2db.Index;
-using System.Collections.Generic;
 
 namespace Vertex.Storage.Linq2db.Storage
 {
     public class EventArchiveFactory : IEventArchiveFactory
     {
-        readonly ConcurrentDictionary<Type, EventArchiveAttribute> typeAttributes = new ConcurrentDictionary<Type, EventArchiveAttribute>();
-        readonly ConcurrentDictionary<string, bool> createTableDict = new ConcurrentDictionary<string, bool>();
-        readonly ConcurrentDictionary<string, object> eventStorageDict = new ConcurrentDictionary<string, object>();
-        readonly DbFactory dbFactory;
-        readonly EventArchivePolicyContainer eventArchivePolicyContainer;
-        readonly IGrainFactory grainFactory;
-        readonly IServiceProvider serviceProvider;
+        private readonly ConcurrentDictionary<Type, EventArchiveAttribute> typeAttributes = new ConcurrentDictionary<Type, EventArchiveAttribute>();
+        private readonly ConcurrentDictionary<string, bool> createTableDict = new ConcurrentDictionary<string, bool>();
+        private readonly ConcurrentDictionary<string, object> eventStorageDict = new ConcurrentDictionary<string, object>();
+        private readonly DbFactory dbFactory;
+        private readonly EventArchivePolicyContainer eventArchivePolicyContainer;
+        private readonly IGrainFactory grainFactory;
+        private readonly IServiceProvider serviceProvider;
+
         public EventArchiveFactory(
             IServiceProvider serviceProvider,
             IGrainFactory grainFactory,
@@ -36,9 +37,9 @@ namespace Vertex.Storage.Linq2db.Storage
             this.eventArchivePolicyContainer = eventArchivePolicyContainer;
         }
 
-        public ValueTask<IEventArchive<PrimaryKey>> Create<PrimaryKey>(IActor<PrimaryKey> actor)
+        public ValueTask<IEventArchive<TPrimaryKey>> Create<TPrimaryKey>(IActor<TPrimaryKey> actor)
         {
-            var attribute = typeAttributes.GetOrAdd(actor.GetType(), key =>
+            var attribute = this.typeAttributes.GetOrAdd(actor.GetType(), key =>
             {
                 var attributes = key.GetCustomAttributes(typeof(EventArchiveAttribute), false);
                 if (attributes.Length > 0)
@@ -50,29 +51,29 @@ namespace Vertex.Storage.Linq2db.Storage
                     throw new MissingAttributeException($"{nameof(EventArchiveAttribute)}=>{key.Name}");
                 }
             });
-            var storage = eventStorageDict.GetOrAdd($"{attribute.OptionName}_{attribute.Name}", key =>
+            var storage = this.eventStorageDict.GetOrAdd($"{attribute.OptionName}_{attribute.Name}", key =>
             {
-                if (!eventArchivePolicyContainer.Container.TryGetValue(attribute.Policy, out var policy))
+                if (!this.eventArchivePolicyContainer.Container.TryGetValue(attribute.Policy, out var policy))
                 {
                     throw new KeyNotFoundException(attribute.Policy);
                 }
-                return new EventArchive<PrimaryKey>(serviceProvider, dbFactory, attribute.OptionName, async (long timestamp) =>
+                return new EventArchive<TPrimaryKey>(this.serviceProvider, this.dbFactory, attribute.OptionName, async (long timestamp) =>
                 {
                     var tableName = policy.Sharding(attribute.Name, timestamp).ToLower();
-                    if (createTableDict.TryAdd($"{attribute.OptionName}_{tableName}", true))
+                    if (this.createTableDict.TryAdd($"{attribute.OptionName}_{tableName}", true))
                     {
                         using var db = this.dbFactory.GetEventDb(attribute.OptionName);
-                        await db.CreateTableIfNotExists<EventEntity<PrimaryKey>>(this.grainFactory, key, tableName, async () =>
+                        await db.CreateTableIfNotExists<EventEntity<TPrimaryKey>>(this.grainFactory, key, tableName, async () =>
                         {
                             var indexGenerator = db.GetGenerator();
-                            await indexGenerator.CreateUniqueIndexIfNotExists(db, tableName, $"{tableName}_event_unique", nameof(EventEntity<PrimaryKey>.ActorId).ToLower(), nameof(EventEntity<PrimaryKey>.Version).ToLower());
-                            await indexGenerator.CreateUniqueIndexIfNotExists(db, tableName, $"{tableName}_event_flow_unique", nameof(EventEntity<PrimaryKey>.ActorId).ToLower(), nameof(EventEntity<PrimaryKey>.Name), nameof(EventEntity<PrimaryKey>.FlowId).ToLower());
+                            await indexGenerator.CreateUniqueIndexIfNotExists(db, tableName, $"{tableName}_event_unique", nameof(EventEntity<TPrimaryKey>.ActorId).ToLower(), nameof(EventEntity<TPrimaryKey>.Version).ToLower());
+                            await indexGenerator.CreateUniqueIndexIfNotExists(db, tableName, $"{tableName}_event_flow_unique", nameof(EventEntity<TPrimaryKey>.ActorId).ToLower(), nameof(EventEntity<TPrimaryKey>.Name), nameof(EventEntity<TPrimaryKey>.FlowId).ToLower());
                         });
                     }
                     return tableName;
                 }, policy.Filter);
             });
-            return ValueTask.FromResult(storage as IEventArchive<PrimaryKey>);
+            return ValueTask.FromResult(storage as IEventArchive<TPrimaryKey>);
         }
     }
 }

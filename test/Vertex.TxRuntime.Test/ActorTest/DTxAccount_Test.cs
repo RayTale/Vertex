@@ -1,8 +1,8 @@
-﻿using Orleans.Runtime;
-using Orleans.TestingHost;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Orleans.Runtime;
+using Orleans.TestingHost;
 using Vertex.Transaction;
 using Vertex.TxRuntime.Core;
 using Vertex.TxRuntime.Test.Biz.IActors;
@@ -13,11 +13,13 @@ namespace Vertex.TxRuntime.Test.ActorTest
     [Collection(ClusterCollection.Name)]
     public class DTxAccount_Test
     {
-        private readonly TestCluster _cluster;
+        private readonly TestCluster cluster;
+
         public DTxAccount_Test(ClusterFixture fixture)
         {
-            _cluster = fixture.Cluster;
+            this.cluster = fixture.Cluster;
         }
+
         [Theory]
         [InlineData(200, 1)]
         [InlineData(201, 100)]
@@ -27,9 +29,9 @@ namespace Vertex.TxRuntime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, times).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IDTxAccount>(id);
 
-            RequestContext.Set(RequestContextKeys.txIdKey, Guid.NewGuid().ToString());
+            RequestContext.Set(RequestContextKeys.TxIdKey, Guid.NewGuid().ToString());
 
             await Task.WhenAll(Enumerable.Range(0, times).Select(i => accountActor.TopUp(topupAmount, guids[i])));
             var snapshot = await accountActor.GetSnapshot();
@@ -62,6 +64,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
             Assert.Equal(backupSnapshot.Meta.Version, times);
             Assert.Equal(backupSnapshot.Meta.Version, backupSnapshot.Meta.DoingVersion);
         }
+
         [Theory]
         [InlineData(300, 1)]
         [InlineData(301, 100)]
@@ -71,9 +74,9 @@ namespace Vertex.TxRuntime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, times).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IDTxAccount>(id);
 
-            RequestContext.Set(RequestContextKeys.txIdKey, Guid.NewGuid().ToString());
+            RequestContext.Set(RequestContextKeys.TxIdKey, Guid.NewGuid().ToString());
 
             await Task.WhenAll(Enumerable.Range(0, times).Select(i => accountActor.TopUp(topupAmount, guids[i])));
             var snapshot = await accountActor.GetSnapshot();
@@ -88,6 +91,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
             Assert.True(snapshot.Meta.Version == 0);
             Assert.True(snapshot.Meta.Version == 0);
         }
+
         [Theory]
         [InlineData(400, 1)]
         [InlineData(401, 100)]
@@ -97,9 +101,9 @@ namespace Vertex.TxRuntime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, times).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IDTxAccount>(id);
 
-            RequestContext.Set(RequestContextKeys.txIdKey, Guid.NewGuid().ToString());
+            RequestContext.Set(RequestContextKeys.TxIdKey, Guid.NewGuid().ToString());
 
             await Task.WhenAll(Enumerable.Range(0, times).Select(i => accountActor.TopUp(topupAmount, guids[i])));
             var snapshot = await accountActor.GetSnapshot();

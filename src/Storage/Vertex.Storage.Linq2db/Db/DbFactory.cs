@@ -10,14 +10,17 @@ namespace Vertex.Storage.Linq2db.Db
         {
             DataConnection.DefaultSettings = new DbSettings(dbOptions.Value);
         }
+
         public EventDb GetEventDb(string name)
         {
             return new EventDb(name);
         }
+
         public SnapshotDb GetSnapshotDb(string name)
         {
             return new SnapshotDb(name);
         }
+
         public SubSnapshotDb GetSubSnapshotDb(string name)
         {
             return new SubSnapshotDb(name);

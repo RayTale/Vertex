@@ -6,7 +6,8 @@ namespace Vertex.Storage.Linq2db.Db
 {
     public class SnapshotDb : DataConnection
     {
-        public SnapshotDb(string name) : base(name)
+        public SnapshotDb(string name)
+            : base(name)
         {
             this.MappingSchema.EntityDescriptorCreatedCallback = (schema, entityDescriptor) =>
             {
@@ -17,6 +18,7 @@ namespace Vertex.Storage.Linq2db.Db
                 }
             };
         }
-        public ITable<SnapshotEntity<PrimaryKey>> Table<PrimaryKey>() => GetTable<SnapshotEntity<PrimaryKey>>();
+
+        public ITable<SnapshotEntity<TPrimaryKey>> Table<TPrimaryKey>() => this.GetTable<SnapshotEntity<TPrimaryKey>>();
     }
 }

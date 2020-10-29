@@ -1,14 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-  </PropertyGroup>
-
+<Sdk Name="Microsoft.Build.CentralPackageVersions" />
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="5.0.0-rc.2.20475.5" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0-rc.2.20475.5" />
-    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="5.0.0-rc.2.20475.17" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0-rc.2.20475.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyModel" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
   </ItemGroup>
 
 </Project>

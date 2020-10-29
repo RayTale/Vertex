@@ -1,15 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-  </PropertyGroup>
-
+<Sdk Name="Microsoft.Build.CentralPackageVersions" />
   <ItemGroup>
-    <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" Version="3.3.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Orleans.Core.Abstractions" Version="3.3.0" />
+    <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" />
+    <PackageReference Include="Microsoft.Orleans.Core.Abstractions" />
   </ItemGroup>
 
 </Project>

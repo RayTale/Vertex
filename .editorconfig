@@ -1,0 +1,43 @@
+﻿[*.cs]
+
+# SA1200: Using directives should be placed correctly
+dotnet_diagnostic.SA1200.severity = none
+dotnet_diagnostic.SA1600.severity = none
+dotnet_diagnostic.CS1591.severity = none
+# SA1633: File should have header
+dotnet_diagnostic.SA1633.severity = none
+# SA1202: Elements should be ordered by access
+dotnet_diagnostic.SA1202.severity = none
+# SA1623: Property summary documentation should match accessors
+dotnet_diagnostic.SA1623.severity = none
+# SA1629: Documentation text should end with a period
+dotnet_diagnostic.SA1629.severity = none
+# SA1316: Tuple element names should use correct casing
+dotnet_diagnostic.SA1316.severity = none
+# SA1116: Split parameters should start on line after declaration
+dotnet_diagnostic.SA1116.severity = none
+# SA1413: Use trailing comma in multi-line initializers
+dotnet_diagnostic.SA1413.severity = none
+# SA1513: Closing brace should be followed by blank line
+dotnet_diagnostic.SA1513.severity = none
+# SA1106: Code should not contain empty statements
+dotnet_diagnostic.SA1106.severity = none
+# SA1616: Element return value documentation should have text
+dotnet_diagnostic.SA1616.severity = none
+# CA1720: 标识符包含类型名称
+dotnet_diagnostic.CA1720.severity = none
+# SA1602: Enumeration items should be documented
+dotnet_diagnostic.SA1602.severity = none
+# SA1124: Do not use regions
+dotnet_diagnostic.SA1124.severity = none
+# SA1129: Do not use default value type constructor
+dotnet_diagnostic.SA1129.severity = none
+# SA1117: Parameters should be on same line or separate lines
+dotnet_diagnostic.SA1117.severity = none
+dotnet_diagnostic.SA0001.severity = none
+# IDE0022: 使用方法的程序块主体
+dotnet_diagnostic.IDE0022.severity = none
+# CA1031: 不捕获常规异常类型
+dotnet_diagnostic.CA1031.severity = none
+# CA1062: 验证公共方法的参数
+dotnet_diagnostic.CA1062.severity = none

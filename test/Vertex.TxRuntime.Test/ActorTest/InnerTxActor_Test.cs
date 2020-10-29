@@ -1,10 +1,10 @@
-﻿using Orleans.TestingHost;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Orleans.TestingHost;
 using Vertex.TxRuntime.Core;
 using Vertex.TxRuntime.Test.Biz.IActors;
 using Xunit;
@@ -14,11 +14,13 @@ namespace Vertex.TxRuntime.Test.ActorTest
     [Collection(ClusterCollection.Name)]
     public class InnerTxActor_Test
     {
-        private readonly TestCluster _cluster;
+        private readonly TestCluster cluster;
+
         public InnerTxActor_Test(ClusterFixture fixture)
         {
-            _cluster = fixture.Cluster;
+            this.cluster = fixture.Cluster;
         }
+
         [Theory]
         [InlineData(1)]
         [InlineData(2)]
@@ -26,7 +28,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
         [InlineData(4)]
         public async Task Tx_Begin_Timeout(int id)
         {
-            var accountActor = _cluster.GrainFactory.GetGrain<IInnerTxAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IInnerTxAccount>(id);
             await accountActor.SetOptions(new Transaction.Options.VertexTxOptions { TxSecondsTimeout = 2 });
             await accountActor.BeginTx_Test();
             var ex = await Assert.ThrowsAsync<TimeoutException>(async () =>
@@ -35,6 +37,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
             });
             Assert.True(ex is TimeoutException);
         }
+
         [Theory]
         [InlineData(100)]
         [InlineData(101)]
@@ -42,13 +45,14 @@ namespace Vertex.TxRuntime.Test.ActorTest
         [InlineData(103)]
         public async Task Tx_Begin_Timeout_rollback(int id)
         {
-            var accountActor = _cluster.GrainFactory.GetGrain<IInnerTxAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IInnerTxAccount>(id);
             await accountActor.SetOptions(new Transaction.Options.VertexTxOptions { TxSecondsTimeout = 2 });
             await accountActor.BeginTx_Test();
             await Task.Delay(2000);
             await accountActor.BeginTx_Test();
             Assert.True(true);
         }
+
         [Theory]
         [InlineData(200, 1)]
         [InlineData(201, 100)]
@@ -58,7 +62,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, times).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IInnerTxAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IInnerTxAccount>(id);
 
             await accountActor.BeginTx_Test();
             await Task.WhenAll(Enumerable.Range(0, times).Select(i => accountActor.TopUp(topupAmount, guids[i])));
@@ -92,6 +96,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
             Assert.Equal(backupSnapshot.Meta.Version, times);
             Assert.Equal(backupSnapshot.Meta.Version, backupSnapshot.Meta.DoingVersion);
         }
+
         [Theory]
         [InlineData(300, 1)]
         [InlineData(301, 100)]
@@ -101,7 +106,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, times).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IInnerTxAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IInnerTxAccount>(id);
 
             await accountActor.BeginTx_Test();
             await Task.WhenAll(Enumerable.Range(0, times).Select(i => accountActor.TopUp(topupAmount, guids[i])));
@@ -117,6 +122,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
             Assert.True(snapshot.Meta.Version == 0);
             Assert.True(snapshot.Meta.Version == 0);
         }
+
         [Theory]
         [InlineData(400, 1)]
         [InlineData(401, 100)]
@@ -126,7 +132,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, times).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IInnerTxAccount>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IInnerTxAccount>(id);
 
             await accountActor.BeginTx_Test();
             await Task.WhenAll(Enumerable.Range(0, times).Select(i => accountActor.TopUp(topupAmount, guids[i])));

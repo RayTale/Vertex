@@ -1,11 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-  </PropertyGroup>
-
+<Sdk Name="Microsoft.Build.CentralPackageVersions" />
   <ItemGroup>
     <ProjectReference Include="..\Vertex.Utils\Vertex.Utils.csproj" />
   </ItemGroup>
-
 </Project>

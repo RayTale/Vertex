@@ -7,7 +7,9 @@ namespace Vertex.Transaction.Events
     public class TxCommitEvent : IEvent
     {
         public string Id { get; set; }
+
         public long StartVersion { get; set; }
+
         public long StartTime { get; set; }
     }
 }

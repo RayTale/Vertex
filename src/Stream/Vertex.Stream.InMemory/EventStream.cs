@@ -1,19 +1,21 @@
-﻿using Orleans.Streams;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Orleans.Streams;
 using Vertex.Abstractions.EventStream;
 
 namespace Vertex.Stream.InMemory
 {
     public class EventStream : IEventStream
     {
-        readonly IAsyncStream<byte[]> asyncStream;
+        private readonly IAsyncStream<byte[]> asyncStream;
+
         public EventStream(IAsyncStream<byte[]> asyncStream)
         {
             this.asyncStream = asyncStream;
         }
+
         public ValueTask Next(byte[] bytes)
         {
-            return new ValueTask(asyncStream.OnNextAsync(bytes));
+            return new ValueTask(this.asyncStream.OnNextAsync(bytes));
         }
     }
 }

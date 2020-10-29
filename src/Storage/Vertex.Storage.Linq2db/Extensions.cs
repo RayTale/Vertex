@@ -1,5 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using Vertex.Abstractions.Storage;
 using Vertex.Storage.Linq2db.Core;
 using Vertex.Storage.Linq2db.Db;

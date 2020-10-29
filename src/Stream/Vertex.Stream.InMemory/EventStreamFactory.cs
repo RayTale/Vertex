@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Options;
-using Orleans;
-using Orleans.Runtime;
-using Orleans.Streams;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
+using Orleans;
+using Orleans.Runtime;
+using Orleans.Streams;
 using Vertex.Abstractions.Actor;
 using Vertex.Abstractions.EventStream;
 using Vertex.Abstractions.Exceptions;
@@ -18,12 +18,13 @@ namespace Vertex.Stream.InMemory
 {
     public class EventStreamFactory : IEventStreamFactory
     {
-        readonly IServiceProvider serviceProvider;
-        readonly IGrainFactory grainFactory;
-        readonly StreamOptions streamOptions;
-        readonly ConcurrentDictionary<Type, StreamAttribute> typeAttributes = new ConcurrentDictionary<Type, StreamAttribute>();
-        readonly ConcurrentDictionary<Type, ConsistentHash> hashDict = new ConcurrentDictionary<Type, ConsistentHash>();
-        readonly ConcurrentDictionary<string, EventStream> streamDict = new ConcurrentDictionary<string, EventStream>();
+        private readonly IServiceProvider serviceProvider;
+        private readonly IGrainFactory grainFactory;
+        private readonly StreamOptions streamOptions;
+        private readonly ConcurrentDictionary<Type, StreamAttribute> typeAttributes = new ConcurrentDictionary<Type, StreamAttribute>();
+        private readonly ConcurrentDictionary<Type, ConsistentHash> hashDict = new ConcurrentDictionary<Type, ConsistentHash>();
+        private readonly ConcurrentDictionary<string, EventStream> streamDict = new ConcurrentDictionary<string, EventStream>();
+
         public EventStreamFactory(
             IServiceProvider serviceProvider,
             IGrainFactory grainFactory,
@@ -33,10 +34,11 @@ namespace Vertex.Stream.InMemory
             this.grainFactory = grainFactory;
             this.streamOptions = options.Value;
         }
-        public async ValueTask<IEventStream> Create<PrimaryKey>(IActor<PrimaryKey> actor)
+
+        public async ValueTask<IEventStream> Create<TPrimaryKey>(IActor<TPrimaryKey> actor)
         {
             var actorType = actor.GetType();
-            var attribute = typeAttributes.GetOrAdd(actorType, key =>
+            var attribute = this.typeAttributes.GetOrAdd(actorType, key =>
             {
                 var attributes = key.GetCustomAttributes(typeof(StreamAttribute), false);
                 if (attributes.Length > 0)
@@ -47,24 +49,29 @@ namespace Vertex.Stream.InMemory
                 {
                     var noStreamAttributes = key.GetCustomAttributes(typeof(NoStreamAttribute), true);
                     if (noStreamAttributes.Length > 0)
+                    {
                         return default;
+                    }
+
                     throw new MissingAttributeException($"{nameof(StreamAttribute)} or {nameof(NoStreamAttribute)}=>{key.Name}");
                 }
             });
             if (attribute != default)
             {
                 var stream = attribute.ShardingFunc(actor.ActorId.ToString());
-                var streamId = await grainFactory.GetGrain<IStreamIdActor>(0).GetId(stream);
-                var result = streamDict.GetOrAdd(stream, key =>
+                var streamId = await this.grainFactory.GetGrain<IStreamIdActor>(0).GetId(stream);
+                var result = this.streamDict.GetOrAdd(stream, key =>
                 {
-                    var streamProvider = serviceProvider.GetRequiredServiceByName<IStreamProvider>(streamOptions.ProviderName);
+                    var streamProvider = this.serviceProvider.GetRequiredServiceByName<IStreamProvider>(this.streamOptions.ProviderName);
 
                     return new EventStream(streamProvider.GetStream<byte[]>(streamId, attribute.Name));
                 });
                 return result;
             }
             else
+            {
                 return default;
+            }
         }
     }
 }

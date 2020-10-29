@@ -1,6 +1,6 @@
-﻿using LinqToDB.Data;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
+using LinqToDB.Data;
 
 namespace Vertex.Storage.Linq2db.Index.Postgresql
 {

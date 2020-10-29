@@ -1,7 +1,11 @@
-﻿namespace Vertex.Abstractions.Actor
+﻿using System.Threading.Tasks;
+
+namespace Vertex.Abstractions.Actor
 {
-    public interface IActor<PrimaryKey>
+    public interface IActor<TPrimaryKey>
     {
-        PrimaryKey ActorId { get; }
+        TPrimaryKey ActorId { get; }
+
+        Task OnActivateAsync();
     }
 }

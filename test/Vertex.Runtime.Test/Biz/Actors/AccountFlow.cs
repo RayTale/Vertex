@@ -1,5 +1,5 @@
-﻿using Orleans;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Orleans;
 using Vertex.Abstractions.Actor;
 using Vertex.Runtime.Actor;
 using Vertex.Runtime.Core;
@@ -15,15 +15,18 @@ namespace Vertex.Runtime.Test.Actors
 
     public sealed class AccountFlow : FlowActor<long>, IAccountFlow
     {
-        readonly IGrainFactory grainFactory;
+        private readonly IGrainFactory grainFactory;
+
         public AccountFlow(IGrainFactory grainFactory)
         {
             this.grainFactory = grainFactory;
         }
-        public override IVertexActor Vertex => grainFactory.GetGrain<IAccount>(this.ActorId);
+
+        public override IVertexActor Vertex => this.grainFactory.GetGrain<IAccount>(this.ActorId);
+
         public Task EventHandle(TransferEvent evt)
         {
-            var toActor = GrainFactory.GetGrain<IAccount>(evt.ToId);
+            var toActor = this.GrainFactory.GetGrain<IAccount>(evt.ToId);
             return toActor.TransferArrived(evt.Amount);
         }
     }

@@ -1,5 +1,5 @@
-﻿using Orleans.Concurrency;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Orleans.Concurrency;
 
 namespace Vertex.Transaction.Abstractions
 {
@@ -7,8 +7,10 @@ namespace Vertex.Transaction.Abstractions
     {
         [AlwaysInterleave]
         Task<bool> Commit();
+
         [AlwaysInterleave]
         Task Finish();
+
         [AlwaysInterleave]
         Task Rollback();
     }

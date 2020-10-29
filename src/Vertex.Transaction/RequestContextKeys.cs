@@ -2,6 +2,6 @@
 {
     public class RequestContextKeys
     {
-        public const string txIdKey= "transaction"; 
+        public const string TxIdKey = "transaction";
     }
 }

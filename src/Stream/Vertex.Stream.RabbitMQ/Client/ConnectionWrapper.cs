@@ -13,7 +13,7 @@ namespace Vertex.Stream.RabbitMQ.Client
 
         public ConnectionWrapper(
             IConnection connection,
-           RabbitOptions options)
+            RabbitOptions options)
         {
             this.connection = connection;
             this.Options = options;

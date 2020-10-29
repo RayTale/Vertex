@@ -1,5 +1,5 @@
-﻿using Orleans.Concurrency;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Orleans.Concurrency;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Storage.Linq2db.Core;
 using Vertex.Stream.Common;
@@ -23,27 +23,33 @@ namespace Vertex.TxRuntime.Test.Biz.Actors
         {
             return Task.FromResult(this.Snapshot);
         }
+
         public Task<SnapshotUnit<long, AccountSnapshot>> GetBackupSnapshot()
         {
             return Task.FromResult(this.BackupSnapshot);
         }
+
         public ValueTask SetOptions(VertexTxOptions txActorOptions)
         {
             this.VertexTxOptions.TxSecondsTimeout = txActorOptions.TxSecondsTimeout;
             return ValueTask.CompletedTask;
         }
+
         public Task BeginTx_Test(string txId = default)
         {
             return this.BeginTransaction(txId);
         }
+
         public Task<bool> Commit_Test(string txId = default)
         {
             return this.Commit(txId);
         }
+
         public Task Finish_Test(string txId = default)
         {
             return this.Finish(txId);
         }
+
         public Task Rollbakc_Test(string txId = default)
         {
             return this.Rollback(txId);
@@ -54,9 +60,9 @@ namespace Vertex.TxRuntime.Test.Biz.Actors
             var evt = new TopupEvent
             {
                 Amount = amount,
-                Balance = Snapshot.Data.Balance + amount
+                Balance = this.Snapshot.Data.Balance + amount
             };
-            await TxRaiseEvent(evt, flowId, txId);
+            await this.TxRaiseEvent(evt, flowId, txId);
         }
     }
 }

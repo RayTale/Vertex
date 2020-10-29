@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Orleans;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Orleans;
 using Vertex.Abstractions.Actor;
 using Vertex.Abstractions.InnerService;
 using Vertex.Stream.Common;
@@ -16,6 +16,11 @@ namespace Vertex.Stream.Kafka.Consumer
 {
     public class ConsumerManager : IHostedService, IDisposable
     {
+        private const int HoldTime = 20 * 1000;
+        private const int MonitTime = 60 * 2 * 1000;
+        private const int CheckTime = 10 * 1000;
+        private const int LockHoldingSeconds = 60;
+
         private readonly List<QueueInfo> queues;
         private readonly ILogger<ConsumerManager> logger;
         private readonly IKafkaClient client;
@@ -24,14 +29,13 @@ namespace Vertex.Stream.Kafka.Consumer
         private readonly ConcurrentDictionary<string, ConsumerRunner> consumerRunners = new ConcurrentDictionary<string, ConsumerRunner>();
         private readonly ConcurrentDictionary<string, long> runners = new ConcurrentDictionary<string, long>();
 
-        private Timer distributedHoldTimer, distributedMonitorTime, heathCheckTimer;
-        private const int lockHoldingSeconds = 60;
+        private Timer distributedHoldTimer;
+        private Timer distributedMonitorTime;
+        private Timer heathCheckTimer;
+
         private int distributedMonitorTimeLock;
         private int distributedHoldTimerLock;
         private int heathCheckTimerLock;
-        private const int holdTime = 20 * 1000;
-        private const int monitTime = 60 * 2 * 1000;
-        private const int checkTime = 10 * 1000;
 
         public ConsumerManager(
             ILogger<ConsumerManager> logger,
@@ -44,7 +48,7 @@ namespace Vertex.Stream.Kafka.Consumer
             this.logger = logger;
             this.grainFactory = grainFactory;
 
-            queues = new List<QueueInfo>();
+            this.queues = new List<QueueInfo>();
             foreach (var assembly in AssemblyHelper.GetAssemblies(logger))
             {
                 foreach (var type in assembly.GetTypes())
@@ -56,10 +60,10 @@ namespace Vertex.Stream.Kafka.Consumer
                         {
                             var topic = i == 0 ? attribute.Name : $"{attribute.Name}_{i}";
                             var interfaceType = type.GetInterfaces().Where(t => typeof(IFlowActor).IsAssignableFrom(t) && !t.IsGenericType && t != typeof(IFlowActor)).FirstOrDefault();
-                            var existQueue = queues.SingleOrDefault(q => q.Topic == topic && q.Group == attribute.Group);
+                            var existQueue = this.queues.SingleOrDefault(q => q.Topic == topic && q.Group == attribute.Group);
                             if (existQueue == default)
                             {
-                                queues.Add(new QueueInfo
+                                this.queues.Add(new QueueInfo
                                 {
                                     SubActorType = new List<Type> { interfaceType },
                                     Topic = topic,
@@ -83,9 +87,9 @@ namespace Vertex.Stream.Kafka.Consumer
                 this.logger.LogInformation("EventBus Background Service is starting.");
             }
 
-            this.distributedMonitorTime = new Timer(state => this.DistributedStart().Wait(), null, 1000, monitTime);
-            this.distributedHoldTimer = new Timer(state => this.DistributedHold().Wait(), null, holdTime, holdTime);
-            this.heathCheckTimer = new Timer(state => { this.HeathCheck().Wait(); }, null, checkTime, checkTime);
+            this.distributedMonitorTime = new Timer(state => this.DistributedStart().Wait(), null, 1000, MonitTime);
+            this.distributedHoldTimer = new Timer(state => this.DistributedHold().Wait(), null, HoldTime, HoldTime);
+            this.heathCheckTimer = new Timer(state => { this.HeathCheck().Wait(); }, null, CheckTime, CheckTime);
             return Task.CompletedTask;
         }
 
@@ -116,6 +120,7 @@ namespace Vertex.Stream.Kafka.Consumer
             this.distributedMonitorTime?.Dispose();
             this.distributedHoldTimer?.Dispose();
         }
+
         private async Task DistributedStart()
         {
             try
@@ -128,7 +133,7 @@ namespace Vertex.Stream.Kafka.Consumer
                         if (!this.runners.ContainsKey(key))
                         {
                             var weight = 100000 - this.runners.Count;
-                            var (isOk, lockId, expectMillisecondDelay) = await this.grainFactory.GetGrain<IWeightHoldLockActor>(key).Lock(weight, lockHoldingSeconds);
+                            var (isOk, lockId, expectMillisecondDelay) = await this.grainFactory.GetGrain<IWeightHoldLockActor>(key).Lock(weight, LockHoldingSeconds);
                             if (isOk)
                             {
                                 if (this.runners.TryAdd(key, lockId))
@@ -137,7 +142,6 @@ namespace Vertex.Stream.Kafka.Consumer
                                     this.consumerRunners.TryAdd(key, runner);
                                     await runner.Run();
                                 }
-
                             }
                         }
                     }
@@ -162,7 +166,7 @@ namespace Vertex.Stream.Kafka.Consumer
                     {
                         if (this.runners.TryGetValue(lockKV.Key, out var lockId))
                         {
-                            var holdResult = await this.grainFactory.GetGrain<IWeightHoldLockActor>(lockKV.Key).Hold(lockId, lockHoldingSeconds);
+                            var holdResult = await this.grainFactory.GetGrain<IWeightHoldLockActor>(lockKV.Key).Hold(lockId, LockHoldingSeconds);
                             if (!holdResult)
                             {
                                 if (this.consumerRunners.TryRemove(lockKV.Key, out var runner))

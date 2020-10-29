@@ -9,11 +9,11 @@ namespace Vertex.Utils
     public class ConsistentHash
     {
         private readonly SortedDictionary<int, string> circle = new SortedDictionary<int, string>();
-        private int replicate = 200;    //default _replicate count
-        private int[] ayKeys;    //cache the ordered keys for better performance
+        private int replicate = 200;    // default _replicate count
+        private int[] ayKeys;    // cache the ordered keys for better performance
 
-        //it's better you override the GetHashCode() of T.
-        //we will use GetHashCode() to identify different node.
+        // it's better you override the GetHashCode() of T.
+        // we will use GetHashCode() to identify different node.
         public ConsistentHash(IEnumerable<string> nodes)
         {
             this.Init(nodes, this.replicate);
@@ -75,9 +75,9 @@ namespace Vertex.Utils
             return this.circle[this.ayKeys[first]];
         }
 
-        //return the index of first item that >= val.
-        //if not exist, return 0;
-        //ay should be ordered array.
+        // return the index of first item that >= val.
+        // if not exist, return 0;
+        // ay should be ordered array.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int First_ge(int[] ay, int val)
         {

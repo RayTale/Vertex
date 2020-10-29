@@ -22,43 +22,49 @@ namespace Vertex.TxRuntime.Test.Biz.Actors
         {
             return Task.FromResult(this.Snapshot);
         }
+
         public Task<SnapshotUnit<long, AccountSnapshot>> GetBackupSnapshot()
         {
             return Task.FromResult(this.BackupSnapshot);
         }
+
         /// <summary>
         /// for test
         /// </summary>
-        /// <param name="txId"></param>
+        /// <param name="txId">transaction id</param>
         /// <returns></returns>
         protected override ValueTask OnTxCommit(string txId)
         {
-            throw new Exception(nameof(OnTxCommit));
+            throw new Exception(nameof(this.OnTxCommit));
         }
+
         public async Task<bool> Transfer(long toAccountId, decimal amount)
         {
-            if (Snapshot.Data.Balance >= amount)
+            if (this.Snapshot.Data.Balance >= amount)
             {
                 var evt = new TransferEvent
                 {
                     Amount = amount,
-                    Balance = Snapshot.Data.Balance - amount,
+                    Balance = this.Snapshot.Data.Balance - amount,
                     ToId = toAccountId
                 };
-                await TxRaiseEvent(evt);
+                await this.TxRaiseEvent(evt);
                 return true;
             }
             else
+            {
                 return false;
+            }
         }
+
         public Task TransferArrived(decimal amount)
         {
             var evt = new TransferArrivedEvent
             {
                 Amount = amount,
-                Balance = Snapshot.Data.Balance + amount
+                Balance = this.Snapshot.Data.Balance + amount
             };
-            return TxRaiseEvent(evt).AsTask();
+            return this.TxRaiseEvent(evt).AsTask();
         }
     }
 }

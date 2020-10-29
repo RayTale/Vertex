@@ -1,8 +1,8 @@
-﻿using BenchmarkDotNet.Attributes;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using BenchmarkDotNet.Attributes;
 
 namespace Vertex.Utils.Benchmark.Channels
 {
@@ -12,9 +12,10 @@ namespace Vertex.Utils.Benchmark.Channels
         [Benchmark]
         public async Task BufferBlock_Test()
         {
-           var  buffer = new BufferBlock<string>();
+            var buffer = new BufferBlock<string>();
             var task = new TaskCompletionSource();
-            ThreadPool.UnsafeQueueUserWorkItem(async state =>
+            ThreadPool.UnsafeQueueUserWorkItem(
+                async state =>
             {
                 while (await buffer.OutputAvailableAsync())
                 {
@@ -22,6 +23,7 @@ namespace Vertex.Utils.Benchmark.Channels
                     {
                     }
                 }
+
                 task.TrySetResult();
             }, null);
             for (int i = 0; i < 100000; i++)
@@ -32,15 +34,18 @@ namespace Vertex.Utils.Benchmark.Channels
                     await buffer.SendAsync(data);
                 }
             }
+
             buffer.Complete();
             await task.Task;
         }
+
         [Benchmark]
         public async Task Channel_Test()
         {
             var channel = Channel.CreateUnbounded<string>();
             var task = new TaskCompletionSource();
-            ThreadPool.UnsafeQueueUserWorkItem(async state =>
+            ThreadPool.UnsafeQueueUserWorkItem(
+                async state =>
             {
                 while (await channel.Reader.WaitToReadAsync())
                 {
@@ -48,6 +53,7 @@ namespace Vertex.Utils.Benchmark.Channels
                     {
                     }
                 }
+
                 task.TrySetResult();
             }, null);
             for (int i = 0; i < 100000; i++)
@@ -58,6 +64,7 @@ namespace Vertex.Utils.Benchmark.Channels
                     await channel.Writer.WriteAsync(data);
                 }
             }
+
             channel.Writer.Complete();
             await task.Task;
         }

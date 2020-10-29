@@ -1,7 +1,7 @@
 ﻿namespace Vertex.Stream.RabbitMQ.Options
 {
     /// <summary>
-    /// Consumer配置信息
+    /// Consumer配置信息.
     /// </summary>
     public class ConsumerOptions
     {
@@ -11,7 +11,7 @@
         public bool AutoAck { get; set; }
 
         /// <summary>
-        /// 发生异常重试次数
+        /// 发生异常重试次数.
         /// </summary>
         public int RetryCount { get; set; } = 3;
 

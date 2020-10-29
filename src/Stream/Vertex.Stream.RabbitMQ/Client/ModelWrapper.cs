@@ -9,12 +9,6 @@ namespace Vertex.Stream.RabbitMQ.Client
         private readonly IBasicProperties persistentProperties;
         private readonly IBasicProperties noPersistentProperties;
 
-        public DefaultObjectPool<ModelWrapper> Pool { get; set; }
-
-        public ConnectionWrapper Connection { get; set; }
-
-        public IModel Model { get; set; }
-
         public ModelWrapper(
             ConnectionWrapper connectionWrapper,
             IModel model)
@@ -26,6 +20,12 @@ namespace Vertex.Stream.RabbitMQ.Client
             this.noPersistentProperties = this.Model.CreateBasicProperties();
             this.noPersistentProperties.Persistent = false;
         }
+
+        public DefaultObjectPool<ModelWrapper> Pool { get; set; }
+
+        public ConnectionWrapper Connection { get; set; }
+
+        public IModel Model { get; set; }
 
         public void Publish(byte[] msg, string exchange, string routingKey, bool persistent = true)
         {

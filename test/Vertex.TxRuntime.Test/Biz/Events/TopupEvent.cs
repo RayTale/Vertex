@@ -7,6 +7,7 @@ namespace Vertex.TxRuntime.Test.Events
     public class TopupEvent : IEvent
     {
         public decimal Amount { get; set; }
+
         public decimal Balance { get; set; }
     }
 }

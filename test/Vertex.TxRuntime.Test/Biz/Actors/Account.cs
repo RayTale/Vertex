@@ -23,24 +23,29 @@ namespace Vertex.Runtime.Test.Actors
     {
         public Task<decimal> GetBalance()
         {
-            return Task.FromResult(Snapshot.Data.Balance);
+            return Task.FromResult(this.Snapshot.Data.Balance);
         }
+
         public Task<SnapshotUnit<long, AccountSnapshot>> GetSnapshot()
         {
             return Task.FromResult(this.Snapshot);
         }
+
         public Task<long> GetActivateSnapshotVersion()
         {
             return Task.FromResult(this.ActivateSnapshotVersion);
         }
+
         public Task<ActorOptions> GetOptions()
         {
             return Task.FromResult(this.VertexOptions);
         }
+
         public Task<ArchiveOptions> GetArchiveOptions()
         {
             return Task.FromResult(this.ArchiveOptions);
         }
+
         public Task SetArchiveOptions(ArchiveOptions archiveOptions)
         {
             this.ArchiveOptions.MinIntervalSeconds = archiveOptions.MinIntervalSeconds;
@@ -48,38 +53,43 @@ namespace Vertex.Runtime.Test.Actors
             this.ArchiveOptions.RetainSeconds = archiveOptions.RetainSeconds;
             return Task.CompletedTask;
         }
+
         public Task<bool> Transfer(long toAccountId, decimal amount)
         {
-            if (Snapshot.Data.Balance >= amount)
+            if (this.Snapshot.Data.Balance >= amount)
             {
                 var evt = new TransferEvent
                 {
                     Amount = amount,
-                    Balance = Snapshot.Data.Balance - amount,
+                    Balance = this.Snapshot.Data.Balance - amount,
                     ToId = toAccountId
                 };
-                return RaiseEvent(evt);
+                return this.RaiseEvent(evt);
             }
             else
+            {
                 return Task.FromResult(false);
+            }
         }
+
         public Task<bool> TopUp(decimal amount, string topupId)
         {
             var evt = new TopupEvent
             {
                 Amount = amount,
-                Balance = Snapshot.Data.Balance + amount
+                Balance = this.Snapshot.Data.Balance + amount
             };
-            return RaiseEvent(evt, topupId);
+            return this.RaiseEvent(evt, topupId);
         }
+
         public Task<bool> TopUp(decimal amount)
         {
             var evt = new TopupEvent
             {
                 Amount = amount,
-                Balance = Snapshot.Data.Balance + amount
+                Balance = this.Snapshot.Data.Balance + amount
             };
-            return RaiseEvent(evt);
+            return this.RaiseEvent(evt);
         }
 
         public Task TransferArrived(decimal amount)
@@ -87,9 +97,9 @@ namespace Vertex.Runtime.Test.Actors
             var evt = new TransferArrivedEvent
             {
                 Amount = amount,
-                Balance = Snapshot.Data.Balance + amount
+                Balance = this.Snapshot.Data.Balance + amount
             };
-            return RaiseEvent(evt);
+            return this.RaiseEvent(evt);
         }
 
         public Task<bool> TransferRefunds(decimal amount)
@@ -97,18 +107,19 @@ namespace Vertex.Runtime.Test.Actors
             var evt = new TransferRefundsEvent
             {
                 Amount = amount,
-                Balance = Snapshot.Data.Balance + amount
+                Balance = this.Snapshot.Data.Balance + amount
             };
-            return RaiseEvent(evt);
+            return this.RaiseEvent(evt);
         }
 
         public async Task RecoverySnapshot_Test()
         {
-            await base.RecoverySnapshot();
+            await this.RecoverySnapshot();
         }
+
         public async Task<List<EventDocumentDto>> GetEventDocuments_FromEventStorage(long startVersion, long endVersion)
         {
-            var results = await EventStorage.GetList(this.ActorId, startVersion, endVersion);
+            var results = await this.EventStorage.GetList(this.ActorId, startVersion, endVersion);
             return results.Select(o => new EventDocumentDto
             {
                 Data = o.Data,
@@ -118,9 +129,10 @@ namespace Vertex.Runtime.Test.Actors
                 Timestamp = o.Timestamp
             }).ToList();
         }
+
         public Task HandlerError_Test()
         {
-            return RaiseEvent(new ErrorTestEvent(), Guid.NewGuid().ToString());
+            return this.RaiseEvent(new ErrorTestEvent(), Guid.NewGuid().ToString());
         }
     }
 }

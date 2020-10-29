@@ -1,5 +1,5 @@
-﻿using Orleans;
-using System;
+﻿using System;
+using Orleans;
 
 namespace Vertex.Stream.Common
 {

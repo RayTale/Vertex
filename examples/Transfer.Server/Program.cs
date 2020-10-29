@@ -1,4 +1,8 @@
-﻿using LinqToDB.Data;
+﻿using System;
+using System.Diagnostics;
+using System.Net;
+using System.Threading.Tasks;
+using LinqToDB.Data;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -6,10 +10,6 @@ using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
-using System;
-using System.Diagnostics;
-using System.Net;
-using System.Threading.Tasks;
 using Transfer.Grains;
 using Transfer.Grains.Common;
 using Transfer.IGrains.DTx;
@@ -25,13 +25,14 @@ using Vertex.Transaction;
 
 namespace Transfer.Server
 {
-    class Program
+    public class Program
     {
-        static Task Main(string[] args)
+        public static Task Main(string[] args)
         {
             var host = CreateHost();
             return host.RunAsync();
         }
+
         private static IHost CreateHost()
         {
             return new HostBuilder()
@@ -57,48 +58,52 @@ namespace Transfer.Server
                 {
                     serviceCollection.AddVertex();
                     serviceCollection.AddTxUnitHandler<long, TransferRequest>();
-                    serviceCollection.AddLinq2DbStorage(config =>
+                    serviceCollection.AddLinq2DbStorage(
+                        config =>
                     {
-                        //var memorySQLiteConnection = new SqliteConnection("Data Source=InMemorySample;Mode=Memory;Cache=Shared");
-                        //memorySQLiteConnection.Open();
-                        //serviceCollection.AddSingleton(memorySQLiteConnection);
-                        config.Connections = new Vertex.Storage.Linq2db.Options.ConnectionOptions[] {
+                        // var memorySQLiteConnection = new SqliteConnection("Data Source=InMemorySample;Mode=Memory;Cache=Shared");
+                        // memorySQLiteConnection.Open();
+                        // serviceCollection.AddSingleton(memorySQLiteConnection);
+                        config.Connections = new Vertex.Storage.Linq2db.Options.ConnectionOptions[]
+                        {
                         new Vertex.Storage.Linq2db.Options.ConnectionOptions
                         {
-                            Name = Consts.core_db_Name,
+                            Name = Consts.CoreDbName,
                             ProviderName = "PostgreSQL",
-                            ConnectionString = "Server=localhost;Port=5432;Database=Vertex;User Id=postgres;Password=postgres;Pooling=true;MaxPoolSize=20;"
+                            ConnectionString = "Server=localhost;Port=5432;Database=Vertex;User Id=postgres;Password=postgres;Pooling=true;MaxPoolSize=20;",
                         },
-                        //new Vertex.Storage.Linq2db.Options.ConnectionOptions
-                        //{
+
+                        // new Vertex.Storage.Linq2db.Options.ConnectionOptions
+                        // {
                         //    Name = Consts.core_db_Name,
                         //    ProviderName = "MySql",
                         //    ConnectionString = "Server=localhost;Database=Vertex;UserId=root;Password=root;pooling=true;maxpoolsize=50;ConnectionLifeTime=30;"
-                        //},
-                        //new Vertex.Storage.Linq2db.Options.ConnectionOptions
-                        //{
+                        // },
+                        // new Vertex.Storage.Linq2db.Options.ConnectionOptions
+                        // {
                         //    Name = Consts.core_db_Name,
                         //    ProviderName = "SQLite.MS",
                         //    ConnectionString = "Data Source=InMemorySample;Mode=Memory;Cache=Shared"
-                        //}
+                        // }
                         };
                     }, new EventArchivePolicy("month", (name, time) => $"Vertex_Archive_{name}_{DateTimeOffset.FromUnixTimeSeconds(time).ToString("yyyyMM")}".ToLower(), table => table.StartsWith("Vertex_Archive".ToLower())));
-                    //serviceCollection.AddRabbitMQStream(options =>
-                    //{
+
+                    // serviceCollection.AddRabbitMQStream(options =>
+                    // {
                     //    options.VirtualHost = "/";
                     //    options.Hosts = new string[] { "localhost:5672" };
                     //    options.UserName = "guest";
                     //    options.Password = "guest";
-                    //});
-                    //serviceCollection.AddKafkaStream(
-                    //config => { },
-                    //config =>
-                    //{
+                    // });
+                    // serviceCollection.AddKafkaStream(
+                    // config => { },
+                    // config =>
+                    // {
                     //    config.BootstrapServers = "localhost:9092";
-                    //}, config =>
-                    //{
+                    // }, config =>
+                    // {
                     //    config.BootstrapServers = "localhost:9092";
-                    //});
+                    // });
                     serviceCollection.AddInMemoryStream();
                     serviceCollection.Configure<GrainCollectionOptions>(options =>
                     {

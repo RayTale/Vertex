@@ -1,5 +1,5 @@
-﻿using LinqToDB.Data;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using LinqToDB.Data;
 
 namespace Vertex.Storage.Linq2db.Index.SqlServer
 {

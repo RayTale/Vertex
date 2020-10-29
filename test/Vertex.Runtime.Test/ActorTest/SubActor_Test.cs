@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Orleans.Concurrency;
-using Orleans.TestingHost;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Orleans.Concurrency;
+using Orleans.TestingHost;
 using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Serialization;
 using Vertex.Protocol;
@@ -21,14 +21,15 @@ namespace Vertex.Runtime.Test.ActorTest
     [Collection(ClusterCollection.Name)]
     public class SubActor_Test
     {
-        private readonly TestCluster _cluster;
+        private readonly TestCluster cluster;
         private readonly ISerializer serializer;
         private readonly IEventTypeContainer eventTypeContainer;
+
         public SubActor_Test(ClusterFixture fixture)
         {
-            _cluster = fixture.Cluster;
-            serializer = fixture.Provider.GetService<ISerializer>();
-            eventTypeContainer = fixture.Provider.GetService<IEventTypeContainer>();
+            this.cluster = fixture.Cluster;
+            this.serializer = fixture.Provider.GetService<ISerializer>();
+            this.eventTypeContainer = fixture.Provider.GetService<IEventTypeContainer>();
         }
 
         [Theory]
@@ -40,8 +41,8 @@ namespace Vertex.Runtime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, count).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IAccount>(id);
-            var accountSubActor = _cluster.GrainFactory.GetGrain<IAccountSubTest>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IAccount>(id);
+            var accountSubActor = this.cluster.GrainFactory.GetGrain<IAccountSubTest>(id);
             var isCurrent = await accountSubActor.IsConcurrentHandle();
             Assert.True(isCurrent);
             await accountSubActor.SetConcurrentHandle(current);
@@ -51,7 +52,7 @@ namespace Vertex.Runtime.Test.ActorTest
             await Task.WhenAll(Enumerable.Range(0, count).Select(i => accountActor.TopUp(topupAmount, guids[i])));
 
             var eventDocuments = await accountActor.GetEventDocuments(1, count);
-            var eventUnits = ConvertToEventUnitList(eventDocuments, id);
+            var eventUnits = this.ConvertToEventUnitList(eventDocuments, id);
 
             var snapshot = await accountSubActor.GetSnapshot();
             Assert.True(snapshot.Version == 0);
@@ -72,7 +73,7 @@ namespace Vertex.Runtime.Test.ActorTest
             executedTimes = await accountSubActor.GetExecutedTimes();
             Assert.True(executedTimes == testUnits.Count);
 
-            //Auto retrieve event
+            // Auto retrieve event
             testUnits = eventUnits.GetRange(30, 20).ToList();
             await accountSubActor.Tell_Test(testUnits);
             snapshot = await accountSubActor.GetSnapshot();
@@ -81,7 +82,7 @@ namespace Vertex.Runtime.Test.ActorTest
             executedTimes = await accountSubActor.GetExecutedTimes();
             Assert.True(executedTimes == testUnits.Max(e => e.Meta.Version));
 
-            //Re enter the test
+            // Re enter the test
             testUnits = eventUnits.GetRange(40, count - 40).ToList();
             await accountSubActor.Tell_Test(testUnits);
             snapshot = await accountSubActor.GetSnapshot();
@@ -101,19 +102,18 @@ namespace Vertex.Runtime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, count).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IAccount>(id);
-            var accountSubActor = _cluster.GrainFactory.GetGrain<IAccountSubTest>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IAccount>(id);
+            var accountSubActor = this.cluster.GrainFactory.GetGrain<IAccountSubTest>(id);
             var isCurrent = await accountSubActor.IsConcurrentHandle();
             Assert.True(isCurrent);
             await accountSubActor.SetConcurrentHandle(current);
             isCurrent = await accountSubActor.IsConcurrentHandle();
             Assert.True(isCurrent == current);
 
-
             await Task.WhenAll(Enumerable.Range(0, count).Select(i => accountActor.TopUp(topupAmount, guids[i])));
 
             var eventDocuments = await accountActor.GetEventDocuments(1, count);
-            var eventUnits = ConvertToEventUnitList(eventDocuments, id);
+            var eventUnits = this.ConvertToEventUnitList(eventDocuments, id);
             var snapshot = await accountSubActor.GetSnapshot();
             Assert.True(snapshot.Version == 0);
             Assert.True(snapshot.Version == snapshot.DoingVersion);
@@ -125,7 +125,8 @@ namespace Vertex.Runtime.Test.ActorTest
             Assert.True(snapshot.Version == snapshot.DoingVersion);
             var executedTimes = await accountSubActor.GetExecutedTimes();
             Assert.True(executedTimes == testUnits.Count);
-            //Auto retrieve event
+
+            // Auto retrieve event
             testUnits = eventUnits.GetRange(60, 20).ToList();
             await accountSubActor.ConcurrentTell_Test(testUnits);
             snapshot = await accountSubActor.GetSnapshot();
@@ -134,7 +135,7 @@ namespace Vertex.Runtime.Test.ActorTest
             executedTimes = await accountSubActor.GetExecutedTimes();
             Assert.True(executedTimes == testUnits.Max(e => e.Meta.Version));
 
-            //Re enter the test
+            // Re enter the test
             testUnits = eventUnits.GetRange(40, count - 40).ToList();
             await accountSubActor.ConcurrentTell_Test(testUnits);
             snapshot = await accountSubActor.GetSnapshot();
@@ -144,7 +145,6 @@ namespace Vertex.Runtime.Test.ActorTest
             executedTimes = await accountSubActor.GetExecutedTimes();
             Assert.True(executedTimes == testUnits.Max(e => e.Meta.Version));
         }
-
 
         [Theory]
         [InlineData(100, 10200, true)]
@@ -155,8 +155,8 @@ namespace Vertex.Runtime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, count).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IAccount>(id);
-            var accountSubActor = _cluster.GrainFactory.GetGrain<IAccountSubTest>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IAccount>(id);
+            var accountSubActor = this.cluster.GrainFactory.GetGrain<IAccountSubTest>(id);
 
             var isCurrent = await accountSubActor.IsConcurrentHandle();
             Assert.True(isCurrent);
@@ -167,7 +167,7 @@ namespace Vertex.Runtime.Test.ActorTest
             await Task.WhenAll(Enumerable.Range(0, count).Select(i => accountActor.TopUp(topupAmount, guids[i])));
 
             var eventDocuments = await accountActor.GetEventDocuments(1, count);
-            var eventUnits = ConvertToBytesList(eventDocuments, id);
+            var eventUnits = this.ConvertToBytesList(eventDocuments, id);
 
             var snapshot = await accountSubActor.GetSnapshot();
             Assert.True(snapshot.Version == 0);
@@ -188,7 +188,7 @@ namespace Vertex.Runtime.Test.ActorTest
             executedTimes = await accountSubActor.GetExecutedTimes();
             Assert.True(executedTimes == testUnits.Count);
 
-            //Auto retrieve event
+            // Auto retrieve event
             testUnits = eventUnits.GetRange(30, 20).ToList();
             var testDocuments = eventDocuments.ToList().GetRange(30, 20).ToList();
             await accountSubActor.OnNext(new Immutable<List<byte[]>>(testUnits));
@@ -198,7 +198,7 @@ namespace Vertex.Runtime.Test.ActorTest
             executedTimes = await accountSubActor.GetExecutedTimes();
             Assert.True(executedTimes == testDocuments.Max(e => e.Version));
 
-            //Re enter the test
+            // Re enter the test
             testUnits = eventUnits.GetRange(40, count - 40).ToList();
             testDocuments = eventDocuments.ToList().GetRange(40, count - 40).ToList();
             await accountSubActor.OnNext(new Immutable<List<byte[]>>(testUnits));
@@ -209,6 +209,7 @@ namespace Vertex.Runtime.Test.ActorTest
             executedTimes = await accountSubActor.GetExecutedTimes();
             Assert.True(executedTimes == testDocuments.Max(e => e.Version));
         }
+
         [Theory]
         [InlineData(100, 10300, true)]
         [InlineData(498, 10301, false)]
@@ -218,8 +219,8 @@ namespace Vertex.Runtime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, count).Select(i => Guid.NewGuid().ToString()).ToList();
-            var accountActor = _cluster.GrainFactory.GetGrain<IAccount>(id);
-            var accountSubActor = _cluster.GrainFactory.GetGrain<IAccountSubTest>(id);
+            var accountActor = this.cluster.GrainFactory.GetGrain<IAccount>(id);
+            var accountSubActor = this.cluster.GrainFactory.GetGrain<IAccountSubTest>(id);
 
             var isCurrent = await accountSubActor.IsConcurrentHandle();
             Assert.True(isCurrent);
@@ -230,7 +231,7 @@ namespace Vertex.Runtime.Test.ActorTest
             await Task.WhenAll(Enumerable.Range(0, count).Select(i => accountActor.TopUp(topupAmount, guids[i])));
 
             var eventDocuments = await accountActor.GetEventDocuments(1, count);
-            var eventUnits = ConvertToBytesList(eventDocuments, id);
+            var eventUnits = this.ConvertToBytesList(eventDocuments, id);
 
             var snapshot = await accountSubActor.GetSnapshot();
             Assert.True(snapshot.Version == 0);
@@ -251,7 +252,7 @@ namespace Vertex.Runtime.Test.ActorTest
             executedTimes = await accountSubActor.GetExecutedTimes();
             Assert.True(executedTimes == testUnits.Count);
 
-            //Auto retrieve event
+            // Auto retrieve event
             testUnits = eventUnits.GetRange(30, 20).ToList();
             var testDocuments = eventDocuments.ToList().GetRange(30, 20).ToList();
             await Task.WhenAll(testUnits.Select(item => accountSubActor.OnNext(new Immutable<byte[]>(item))));
@@ -261,7 +262,7 @@ namespace Vertex.Runtime.Test.ActorTest
             executedTimes = await accountSubActor.GetExecutedTimes();
             Assert.True(executedTimes == testDocuments.Max(e => e.Version));
 
-            //Re enter the test
+            // Re enter the test
             testUnits = eventUnits.GetRange(40, count - 40).ToList();
             testDocuments = eventDocuments.ToList().GetRange(40, count - 40).ToList();
             await Task.WhenAll(testUnits.Select(item => accountSubActor.OnNext(new Immutable<byte[]>(item))));
@@ -272,10 +273,12 @@ namespace Vertex.Runtime.Test.ActorTest
             executedTimes = await accountSubActor.GetExecutedTimes();
             Assert.True(executedTimes == testDocuments.Max(e => e.Version));
         }
+
         private List<byte[]> ConvertToBytesList(IList<EventDocumentDto> eventDocuments, long id)
         {
-            return eventDocuments.Select(document => ConvertToBytes(document, id)).ToList();
+            return eventDocuments.Select(document => this.ConvertToBytes(document, id)).ToList();
         }
+
         private byte[] ConvertToBytes(EventDocumentDto document, long id)
         {
             var meta = new EventMeta { Version = document.Version, Timestamp = document.Timestamp, FlowId = document.FlowId };
@@ -284,17 +287,19 @@ namespace Vertex.Runtime.Test.ActorTest
             using var buffer = EventConverter.ConvertToBytes(transUnit);
             return buffer.ToArray();
         }
+
         private List<EventUnit<long>> ConvertToEventUnitList(IList<EventDocumentDto> documents, long id)
         {
-            return documents.Select(document => ConvertToEventUnit(document, id)).ToList();
+            return documents.Select(document => this.ConvertToEventUnit(document, id)).ToList();
         }
+
         private EventUnit<long> ConvertToEventUnit(EventDocumentDto document, long id)
         {
-            if (!eventTypeContainer.TryGet(document.Name, out var type))
+            if (!this.eventTypeContainer.TryGet(document.Name, out var type))
             {
                 throw new NoNullAllowedException($"event name of {document.Name}");
             }
-            var data = serializer.Deserialize(document.Data, type);
+            var data = this.serializer.Deserialize(document.Data, type);
             return new EventUnit<long>
             {
                 ActorId = id,

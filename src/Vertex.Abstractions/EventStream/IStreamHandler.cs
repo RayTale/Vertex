@@ -1,6 +1,6 @@
-﻿using Orleans.Concurrency;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Orleans.Concurrency;
 
 namespace Vertex.Abstractions.EventStream
 {

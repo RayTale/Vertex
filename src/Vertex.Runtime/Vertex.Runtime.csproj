@@ -1,17 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-  </PropertyGroup>
-
+<Sdk Name="Microsoft.Build.CentralPackageVersions" />
   <ItemGroup>
-    <PackageReference Include="IdGen" Version="3.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.0-rc.2.20475.5" />
-    <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" Version="3.3.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Orleans.Core" Version="3.3.0" />
+    <PackageReference Include="IdGen" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" />
+    <PackageReference Include="Microsoft.Orleans.Core" />
   </ItemGroup>
 
   <ItemGroup>

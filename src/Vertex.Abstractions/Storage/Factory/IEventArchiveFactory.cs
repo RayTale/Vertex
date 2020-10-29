@@ -5,6 +5,6 @@ namespace Vertex.Abstractions.Storage
 {
     public interface IEventArchiveFactory
     {
-        ValueTask<IEventArchive<PrimaryKey>> Create<PrimaryKey>(IActor<PrimaryKey> actor);
+        ValueTask<IEventArchive<TPrimaryKey>> Create<TPrimaryKey>(IActor<TPrimaryKey> actor);
     }
 }

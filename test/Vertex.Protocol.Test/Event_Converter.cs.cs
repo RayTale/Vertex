@@ -13,7 +13,10 @@ namespace Vertex.Protocol.Test
         public void ConvertToBytes(object id)
         {
             if (id is string strId && string.IsNullOrEmpty(strId))
+            {
                 id = Guid.NewGuid();
+            }
+
             var eventName = "TestName";
             var baseBytes = Encoding.UTF8.GetBytes(eventName);
             var eventBytes = Encoding.UTF8.GetBytes(eventName);

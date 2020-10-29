@@ -4,21 +4,23 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Vertex.Stream.Common;
 using Vertex.Stream.Kafka.Options;
-using Microsoft.Extensions.Options;
 
 namespace Vertex.Stream.Kafka.Consumer
 {
     public class ConsumerRunner
     {
-        private bool closed;
-        public bool available;
-        private static readonly TimeSpan whileTimeoutSpan = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan WhileTimeoutSpan = TimeSpan.FromSeconds(30);
         private readonly IStreamSubHandler streamSubHandler;
         private readonly ConsumerOptions consumerOptions;
+
+        private bool closed;
+        private bool available;
+
         public ConsumerRunner(
             IServiceProvider provider,
             QueueInfo queue)
@@ -33,6 +35,7 @@ namespace Vertex.Stream.Kafka.Consumer
         public ILogger<ConsumerRunner> Logger { get; }
 
         public IKafkaClient Client { get; }
+
         public QueueInfo Queue { get; }
 
         public Task Run()
@@ -42,7 +45,7 @@ namespace Vertex.Stream.Kafka.Consumer
             {
                 using var consumer = this.Client.GetConsumer(this.Queue.Group);
                 consumer.Handler.Subscribe(this.Queue.Topic);
-                available = true;
+                this.available = true;
                 while (!this.closed)
                 {
                     var list = new List<BytesBox>();
@@ -51,7 +54,7 @@ namespace Vertex.Stream.Kafka.Consumer
                     {
                         while (true)
                         {
-                            var whileResult = consumer.Handler.Consume(whileTimeoutSpan);
+                            var whileResult = consumer.Handler.Consume(WhileTimeoutSpan);
                             if (whileResult is null || whileResult.IsPartitionEOF || whileResult.Message.Value == null)
                             {
                                 break;
@@ -97,12 +100,12 @@ namespace Vertex.Stream.Kafka.Consumer
                             }
                             catch (Exception ex)
                             {
-                                Logger.LogError(ex.Message);
+                                this.Logger.LogError(ex.Message);
                             }
                         }
                     }
                 }
-                available = false;
+                this.available = false;
                 consumer.Handler.Unsubscribe();
             }, null);
             return Task.CompletedTask;
@@ -114,18 +117,18 @@ namespace Vertex.Stream.Kafka.Consumer
             {
                 if (list.Count > 1)
                 {
-                    await Task.WhenAll(Queue.SubActorType.Select(subType => this.streamSubHandler.EventHandler(subType, list)));
+                    await Task.WhenAll(this.Queue.SubActorType.Select(subType => this.streamSubHandler.EventHandler(subType, list)));
                 }
                 else if (list.Count == 1)
                 {
-                    await Task.WhenAll(Queue.SubActorType.Select(subType => this.streamSubHandler.EventHandler(subType, list[0])));
+                    await Task.WhenAll(this.Queue.SubActorType.Select(subType => this.streamSubHandler.EventHandler(subType, list[0])));
                 }
             }
             catch
             {
-                if (consumerOptions.RetryCount >= times)
+                if (this.consumerOptions.RetryCount >= times)
                 {
-                    await Task.Delay(consumerOptions.RetryIntervals);
+                    await Task.Delay(this.consumerOptions.RetryIntervals);
                     await this.Notice(list.Where(o => !o.Success).ToList(), times + 1);
                 }
                 else
@@ -137,7 +140,7 @@ namespace Vertex.Stream.Kafka.Consumer
 
         public async Task HeathCheck()
         {
-            if (!this.closed && !available)
+            if (!this.closed && !this.available)
             {
                 await this.Run();
             }

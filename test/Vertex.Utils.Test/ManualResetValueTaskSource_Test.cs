@@ -15,6 +15,7 @@ namespace Vertex.Utils.Test
             var result = await valueTask;
             Assert.True(result == 10);
         }
+
         [Fact]
         public async Task Reset_Failed()
         {
@@ -32,6 +33,7 @@ namespace Vertex.Utils.Test
             });
             Assert.True(ex is InvalidOperationException);
         }
+
         [Fact]
         public async Task Reset_Success()
         {

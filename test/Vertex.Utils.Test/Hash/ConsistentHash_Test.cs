@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Vertex.Utils.Test.Hash
 {
     public class ConsistentHash_Test
     {
-
         [Theory]
         [InlineData(100)]
         [InlineData(500)]

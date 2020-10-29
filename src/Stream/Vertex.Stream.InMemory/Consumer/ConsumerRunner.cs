@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans;
 using Orleans.Streams;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Vertex.Stream.Common;
 using Vertex.Stream.InMemory.IGrains;
 using Vertex.Stream.InMemory.Options;
@@ -15,13 +15,14 @@ namespace Vertex.Stream.InMemory.Consumer
 {
     public class ConsumerRunner
     {
-        private bool closed;
         private readonly IStreamSubHandler streamSubHandler;
         private readonly IStreamProvider streamProvider;
         private readonly IGrainFactory grainFactory;
         private readonly ConsumerOptions consumerOptions;
         private StreamSubscriptionHandle<byte[]> streamSubscriptionHandle;
         private Guid streamId;
+        private bool closed;
+
         public ConsumerRunner(
             IStreamProvider streamProvider,
             IServiceProvider provider,
@@ -41,13 +42,13 @@ namespace Vertex.Stream.InMemory.Consumer
 
         public async Task Run()
         {
-            if (streamSubscriptionHandle != default)
+            if (this.streamSubscriptionHandle != default)
             {
-                await streamSubscriptionHandle.UnsubscribeAsync();
+                await this.streamSubscriptionHandle.UnsubscribeAsync();
             }
-            streamId = await grainFactory.GetGrain<IStreamIdActor>(0).GetId(this.Queue.Topic);
-            var stream = streamProvider.GetStream<byte[]>(streamId, Queue.Name);
-            streamSubscriptionHandle = await stream.SubscribeAsync(async bytesList => await this.Notice(bytesList.Select(o => new BytesBox(o.Item, default)).ToList()));
+            this.streamId = await this.grainFactory.GetGrain<IStreamIdActor>(0).GetId(this.Queue.Topic);
+            var stream = this.streamProvider.GetStream<byte[]>(this.streamId, this.Queue.Name);
+            this.streamSubscriptionHandle = await stream.SubscribeAsync(async bytesList => await this.Notice(bytesList.Select(o => new BytesBox(o.Item, default)).ToList()));
         }
 
         private async Task Notice(List<BytesBox> list, int times = 0)
@@ -56,11 +57,11 @@ namespace Vertex.Stream.InMemory.Consumer
             {
                 if (list.Count > 1)
                 {
-                    await this.streamSubHandler.EventHandler(Queue.ActorType, list);
+                    await this.streamSubHandler.EventHandler(this.Queue.ActorType, list);
                 }
                 else if (list.Count == 1)
                 {
-                    await this.streamSubHandler.EventHandler(Queue.ActorType, list[0]);
+                    await this.streamSubHandler.EventHandler(this.Queue.ActorType, list[0]);
                 }
             }
             catch
@@ -79,8 +80,8 @@ namespace Vertex.Stream.InMemory.Consumer
 
         public async Task HeathCheck()
         {
-            var checkStreamId = await grainFactory.GetGrain<IStreamIdActor>(0).GetId(this.Queue.Topic);
-            if (!closed && checkStreamId != streamId)
+            var checkStreamId = await this.grainFactory.GetGrain<IStreamIdActor>(0).GetId(this.Queue.Topic);
+            if (!this.closed && checkStreamId != this.streamId)
             {
                 await this.Run();
             }

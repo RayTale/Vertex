@@ -16,12 +16,12 @@ namespace Vertex.Runtime.InnerService
             if (this.lockId == 0 || now > this.expireTime)
             {
                 this.lockId = now;
-                this.expireTime = now + holdingSeconds * 1000;
+                this.expireTime = now + (holdingSeconds * 1000);
                 return Task.FromResult((true, now));
             }
             else
             {
-                return Task.FromResult((false, (long)0));
+                return Task.FromResult((false, 0L));
             }
         }
 
@@ -29,7 +29,7 @@ namespace Vertex.Runtime.InnerService
         {
             if (this.lockId == lockId)
             {
-                this.expireTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + holdingSeconds * 1000;
+                this.expireTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + (holdingSeconds * 1000);
                 return Task.FromResult(true);
             }
             else

@@ -1,6 +1,6 @@
-﻿using Orleans.Concurrency;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using Orleans.Concurrency;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Storage.Linq2db.Core;
 using Vertex.Stream.Common;
@@ -23,25 +23,28 @@ namespace Vertex.TxRuntime.Test.Biz.Actors
         {
             return Task.FromResult(this.Snapshot);
         }
+
         public Task<SnapshotUnit<long, AccountSnapshot>> GetBackupSnapshot()
         {
             return Task.FromResult(this.BackupSnapshot);
         }
+
         public Task<bool> TopUp(decimal amount, string flowId)
         {
-            return ConcurrentRaiseEvent(async (snapshot, func) =>
+            return this.ConcurrentRaiseEvent(async (snapshot, func) =>
             {
                 var evt = new TopupEvent
                 {
                     Amount = amount,
-                    Balance = Snapshot.Data.Balance + amount
+                    Balance = this.Snapshot.Data.Balance + amount
                 };
                 await func(evt);
             }, flowId);
         }
+
         public Task ErrorTest()
         {
-            return ConcurrentRaiseEvent(async (snapshot, func) =>
+            return this.ConcurrentRaiseEvent(async (snapshot, func) =>
             {
                 await func(new ErrorTestEvent());
             }, Guid.NewGuid().ToString());

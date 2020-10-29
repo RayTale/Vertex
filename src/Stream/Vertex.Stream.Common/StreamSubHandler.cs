@@ -1,28 +1,30 @@
-﻿using Microsoft.Extensions.Logging;
-using Orleans;
-using Orleans.Concurrency;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Orleans;
+using Orleans.Concurrency;
 using Vertex.Abstractions.EventStream;
 using Vertex.Protocol;
 
 namespace Vertex.Stream.Common
 {
-    public class StreamSubHandler: IStreamSubHandler
+    public class StreamSubHandler : IStreamSubHandler
     {
+        private static readonly ConcurrentDictionary<Type, object> ObserverGeneratorDict = new ConcurrentDictionary<Type, object>();
+
         private readonly IGrainFactory clusterClient;
 
-        protected ILogger Logger { get; private set; }
-        private static readonly ConcurrentDictionary<Type, object> observerGeneratorDict = new ConcurrentDictionary<Type, object>();
         public StreamSubHandler(IGrainFactory grainFactory, ILogger<StreamSubHandler> logger)
         {
             this.clusterClient = grainFactory;
             this.Logger = logger;
         }
+
+        protected ILogger Logger { get; private set; }
 
         public async Task EventHandler(Type observerType, BytesBox bytes)
         {
@@ -77,18 +79,19 @@ namespace Vertex.Stream.Common
                 }
             }));
         }
-        private IStreamHandler GetObserver<PrimaryKey>(Type ObserverType, PrimaryKey primaryKey)
+
+        private IStreamHandler GetObserver<TPrimaryKey>(Type observerType, TPrimaryKey primaryKey)
         {
-            var func = observerGeneratorDict.GetOrAdd(ObserverType, key =>
+            var func = ObserverGeneratorDict.GetOrAdd(observerType, key =>
             {
                 var clientType = typeof(IGrainFactory);
                 var clientParams = Expression.Parameter(clientType, "client");
-                var primaryKeyParams = Expression.Parameter(typeof(PrimaryKey), "primaryKey");
+                var primaryKeyParams = Expression.Parameter(typeof(TPrimaryKey), "primaryKey");
                 var grainClassNamePrefixParams = Expression.Parameter(typeof(string), "grainClassNamePrefix");
-                var method = typeof(ClusterClientExtensions).GetMethod("GetGrain", new Type[] { clientType, typeof(PrimaryKey), typeof(string) });
-                var body = Expression.Call(method.MakeGenericMethod(ObserverType), clientParams, primaryKeyParams, grainClassNamePrefixParams);
-                return Expression.Lambda<Func<IGrainFactory, PrimaryKey, string, IStreamHandler>>(body, clientParams, primaryKeyParams, grainClassNamePrefixParams).Compile();
-            }) as Func<IGrainFactory, PrimaryKey, string, IStreamHandler>;
+                var method = typeof(ClusterClientExtensions).GetMethod("GetGrain", new Type[] { clientType, typeof(TPrimaryKey), typeof(string) });
+                var body = Expression.Call(method.MakeGenericMethod(observerType), clientParams, primaryKeyParams, grainClassNamePrefixParams);
+                return Expression.Lambda<Func<IGrainFactory, TPrimaryKey, string, IStreamHandler>>(body, clientParams, primaryKeyParams, grainClassNamePrefixParams).Compile();
+            }) as Func<IGrainFactory, TPrimaryKey, string, IStreamHandler>;
             return func(this.clusterClient, primaryKey, null);
         }
     }

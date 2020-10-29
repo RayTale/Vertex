@@ -2,15 +2,15 @@
 
 namespace Vertex.Utils.Channels
 {
-    public class AskInputBox<Input, Output>
+    public class AskInputBox<TInput, TOutput>
     {
-        public AskInputBox(Input data)
+        public AskInputBox(TInput data)
         {
             this.Value = data;
         }
 
-        public TaskCompletionSource<Output> TaskSource { get; } = new TaskCompletionSource<Output>();
+        public TaskCompletionSource<TOutput> TaskSource { get; } = new TaskCompletionSource<TOutput>();
 
-        public Input Value { get; set; }
+        public TInput Value { get; set; }
     }
 }

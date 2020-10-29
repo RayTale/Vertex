@@ -1,6 +1,6 @@
-﻿using Orleans;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using Orleans;
 using Vertex.Abstractions.Actor;
 using Vertex.Runtime.Actor;
 using Vertex.Runtime.Core;
@@ -16,33 +16,39 @@ namespace Vertex.Runtime.Test.Actors
     [StreamSub(nameof(Account), "db", 3)]
     public sealed class AccountDb : FlowActor<long>, IAccountDb
     {
-        readonly IGrainFactory grainFactory;
-        int executedTimes;
+        private readonly IGrainFactory grainFactory;
+        private int executedTimes;
+
         public AccountDb(IGrainFactory grainFactory)
         {
             this.grainFactory = grainFactory;
         }
-        public override IVertexActor Vertex => grainFactory.GetGrain<IAccount>(this.ActorId);
+
+        public override IVertexActor Vertex => this.grainFactory.GetGrain<IAccount>(this.ActorId);
 
         public Task EventHandle(TransferEvent evt, EventMeta eventBase)
         {
-            //Update database here
+            // Update database here
             return Task.CompletedTask;
         }
+
         public Task EventHandle(TopupEvent evt, EventMeta eventBase)
         {
-            Interlocked.Increment(ref executedTimes);
-            //Update database here
+            Interlocked.Increment(ref this.executedTimes);
+
+            // Update database here
             return Task.CompletedTask;
         }
+
         public Task EventHandle(TransferArrivedEvent evt, EventMeta eventBase)
         {
-            //Update database here
+            // Update database here
             return Task.CompletedTask;
         }
+
         public Task EventHandle(TransferRefundsEvent evt, EventMeta eventBase)
         {
-            //Update database here
+            // Update database here
             return Task.CompletedTask;
         }
     }

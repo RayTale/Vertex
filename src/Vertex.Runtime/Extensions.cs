@@ -1,5 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
+﻿using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Serialization;
 using Vertex.Abstractions.Snapshot;
@@ -21,6 +21,7 @@ namespace Vertex.Runtime
             serviceCollection.AddSingleton(typeof(TaskSourcePool<>));
             serviceCollection.AutoAddSnapshotHandler();
         }
+
         private static void AutoAddSnapshotHandler(this IServiceCollection serviceCollection)
         {
             foreach (var assembly in AssemblyHelper.GetAssemblies())

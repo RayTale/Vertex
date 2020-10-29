@@ -1,11 +1,10 @@
-﻿using Vertex.Abstractions.Snapshot;
-using Vertext.Abstractions.Event;
+﻿using Vertext.Abstractions.Event;
 
 namespace Vertex.Abstractions.Snapshot
 {
-    public interface ISnapshotHandler<PrimaryKey, T>: ISnapshotHandlerBase
+    public interface ISnapshotHandler<TPrimaryKey, T> : ISnapshotHandlerBase
         where T : ISnapshot
     {
-        void Apply(SnapshotUnit<PrimaryKey, T> snapshotBox, EventUnit<PrimaryKey> eventBox);
+        void Apply(SnapshotUnit<TPrimaryKey, T> snapshotBox, EventUnit<TPrimaryKey> eventBox);
     }
 }

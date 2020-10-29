@@ -1,6 +1,7 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
+﻿using System;
 using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
 using Orleans;
 using Orleans.Concurrency;
 using Vertex.Abstractions.InnerService;
@@ -10,13 +11,21 @@ namespace Vertex.Runtime.InnerService
     [Reentrant]
     public class LockActor : Grain, ILockActor
     {
+        private readonly ConcurrentQueue<(TaskCompletionSource<bool> taskCompletionSource, int maxMillisecondsHold)> queue = new ConcurrentQueue<(TaskCompletionSource<bool> taskCompletionSource, int maxMillisecondsHold)>();
         private int locked;
-        private readonly ConcurrentQueue<TaskCompletionSource<bool>> queue = new ConcurrentQueue<TaskCompletionSource<bool>>();
+        private long holdTimestamp;
 
-        public async Task<bool> Lock(int millisecondsDelay = 0)
+        public async Task<bool> Lock(int millisecondsDelay = 0, int maxMillisecondsHold = 30 * 1000)
         {
-            if (Interlocked.CompareExchange(ref locked, 1, 0) == 0)
+            var nowTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            if (this.locked == 1 && nowTimestamp > this.holdTimestamp)
             {
+                Interlocked.CompareExchange(ref this.locked, 0, 1);
+            }
+
+            if (Interlocked.CompareExchange(ref this.locked, 1, 0) == 0)
+            {
+                this.holdTimestamp = nowTimestamp + maxMillisecondsHold;
                 return true;
             }
             else
@@ -29,26 +38,33 @@ namespace Vertex.Runtime.InnerService
                     {
                         taskSource.TrySetResult(false);
                     });
-                    queue.Enqueue(taskSource);
+                    this.queue.Enqueue((taskSource, maxMillisecondsHold));
                     return await taskSource.Task;
                 }
-                queue.Enqueue(taskSource);
+                this.queue.Enqueue((taskSource, maxMillisecondsHold));
                 return await taskSource.Task;
             }
         }
 
         public Task Unlock()
         {
-            if (queue.TryDequeue(out var item))
+            if (this.queue.TryDequeue(out var item))
             {
-                if (!item.Task.IsCompleted)
-                    item.TrySetResult(true);
+                if (!item.taskCompletionSource.Task.IsCompleted)
+                {
+                    if (item.taskCompletionSource.TrySetResult(true))
+                    {
+                        this.holdTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + item.maxMillisecondsHold;
+                    }
+                }
                 else
-                    return Unlock();
+                {
+                    return this.Unlock();
+                }
             }
             else
             {
-                Interlocked.CompareExchange(ref locked, 0, 1);
+                Interlocked.CompareExchange(ref this.locked, 0, 1);
             }
             return Task.CompletedTask;
         }

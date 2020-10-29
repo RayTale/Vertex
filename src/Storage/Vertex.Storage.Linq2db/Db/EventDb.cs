@@ -6,7 +6,8 @@ namespace Vertex.Storage.Linq2db.Db
 {
     public class EventDb : DataConnection
     {
-        public EventDb(string name) : base(name)
+        public EventDb(string name)
+            : base(name)
         {
             this.MappingSchema.EntityDescriptorCreatedCallback = (schema, entityDescriptor) =>
             {
@@ -17,6 +18,7 @@ namespace Vertex.Storage.Linq2db.Db
                 }
             };
         }
-        public ITable<EventEntity<PrimaryKey>> Table<PrimaryKey>() => GetTable<EventEntity<PrimaryKey>>();
+
+        public ITable<EventEntity<TPrimaryKey>> Table<TPrimaryKey>() => this.GetTable<EventEntity<TPrimaryKey>>();
     }
 }

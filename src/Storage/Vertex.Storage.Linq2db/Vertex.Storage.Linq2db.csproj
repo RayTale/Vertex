@@ -1,9 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-  </PropertyGroup>
-
+<Sdk Name="Microsoft.Build.CentralPackageVersions" />
   <ItemGroup>
     <ProjectReference Include="..\..\Vertex.Abstractions\Vertex.Abstractions.csproj" />
     <ProjectReference Include="..\..\Vertex.Transaction.Abstractions\Vertex.Transaction.Abstractions.csproj" />
@@ -11,8 +7,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="linq2db" Version="3.1.4" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0-rc.2.20475.5" />
+    <PackageReference Include="linq2db" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
   </ItemGroup>
 
 </Project>

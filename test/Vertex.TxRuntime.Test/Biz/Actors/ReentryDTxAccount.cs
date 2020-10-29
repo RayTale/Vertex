@@ -22,6 +22,7 @@ namespace Vertex.TxRuntime.Test.Biz.Actors
         {
             return Task.FromResult(this.Snapshot);
         }
+
         public Task<SnapshotUnit<long, AccountSnapshot>> GetBackupSnapshot()
         {
             return Task.FromResult(this.BackupSnapshot);
@@ -35,24 +36,27 @@ namespace Vertex.TxRuntime.Test.Biz.Actors
 
         public Task TopUp(decimal amount, string flowId)
         {
-            return ConcurrentRaiseEvent(async (snapshot, func) =>
+            return this.ConcurrentRaiseEvent(async (snapshot, func) =>
             {
                 var evt = new TopupEvent
                 {
                     Amount = amount,
-                    Balance = Snapshot.Data.Balance + amount
+                    Balance = this.Snapshot.Data.Balance + amount
                 };
                 await func(evt);
             }, flowId);
         }
+
         public Task<bool> Commit_Test()
         {
             return this.Commit();
         }
+
         public Task Finish_Test()
         {
             return this.Finish();
         }
+
         public Task Rollbakc_Test()
         {
             return this.Rollback();

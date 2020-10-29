@@ -3,18 +3,21 @@ using Vertex.Abstractions.Snapshot;
 
 namespace Vertex.Abstractions.Storage
 {
-    public interface ISnapshotStorage<PrimaryKey>
+    public interface ISnapshotStorage<TPrimaryKey>
     {
-        Task<SnapshotUnit<PrimaryKey, T>> Get<T>(PrimaryKey actorId) where T : ISnapshot, new();
+        Task<SnapshotUnit<TPrimaryKey, T>> Get<T>(TPrimaryKey actorId)
+            where T : ISnapshot, new();
 
-        Task Insert<T>(SnapshotUnit<PrimaryKey, T> snapshot) where T : ISnapshot, new();
+        Task Insert<T>(SnapshotUnit<TPrimaryKey, T> snapshot)
+            where T : ISnapshot, new();
 
-        Task Update<T>(SnapshotUnit<PrimaryKey, T> snapshot) where T : ISnapshot, new();
+        Task Update<T>(SnapshotUnit<TPrimaryKey, T> snapshot)
+            where T : ISnapshot, new();
 
-        Task UpdateMinEventTimestamp(PrimaryKey actorId, long timestamp);
+        Task UpdateMinEventTimestamp(TPrimaryKey actorId, long timestamp);
 
-        Task UpdateIsLatest(PrimaryKey actorId, bool isLatest);
+        Task UpdateIsLatest(TPrimaryKey actorId, bool isLatest);
 
-        Task Delete(PrimaryKey actorId);
+        Task Delete(TPrimaryKey actorId);
     }
 }

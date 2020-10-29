@@ -1,11 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-  </PropertyGroup>
-
+<Sdk Name="Microsoft.Build.CentralPackageVersions" />
   <ItemGroup>
-    <PackageReference Include="Microsoft.Orleans.Runtime.Abstractions" Version="3.3.0" />
+    <PackageReference Include="Microsoft.Orleans.Runtime.Abstractions" />
   </ItemGroup>
 
   <ItemGroup>

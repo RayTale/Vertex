@@ -1,9 +1,9 @@
-﻿using Confluent.Kafka;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using Vertex.Abstractions.Serialization;
 using Vertex.Stream.Kafka.Options;
 

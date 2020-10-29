@@ -1,5 +1,5 @@
-﻿using Orleans.TestingHost;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Orleans.TestingHost;
 using Vertex.Abstractions.InnerService;
 using Vertex.Runtime.Core;
 using Xunit;
@@ -9,16 +9,17 @@ namespace Vertex.Runtime.Test.InnerService
     [Collection(ClusterCollection.Name)]
     public class WeightHoldLockActor_Test
     {
-        private readonly TestCluster _cluster;
+        private readonly TestCluster cluster;
 
         public WeightHoldLockActor_Test(ClusterFixture fixture)
         {
-            _cluster = fixture.Cluster;
+            this.cluster = fixture.Cluster;
         }
+
         [Fact]
         public async Task Lock()
         {
-            var lockActor = _cluster.GrainFactory.GetGrain<IWeightHoldLockActor>("0");
+            var lockActor = this.cluster.GrainFactory.GetGrain<IWeightHoldLockActor>("0");
             var (isOk, lockId, delay) = await lockActor.Lock(10);
             var successLockId = lockId;
             Assert.True(isOk);

@@ -1,7 +1,7 @@
-﻿using Orleans.TestingHost;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Orleans.TestingHost;
 using Vertex.TxRuntime.Core;
 using Vertex.TxRuntime.Test.Biz.IActors;
 using Vertex.TxRuntime.Test.Biz.Models;
@@ -12,11 +12,13 @@ namespace Vertex.TxRuntime.Test.ActorTest
     [Collection(ClusterCollection.Name)]
     public class TransferDtxUnit_Test
     {
-        private readonly TestCluster _cluster;
+        private readonly TestCluster cluster;
+
         public TransferDtxUnit_Test(ClusterFixture fixture)
         {
-            _cluster = fixture.Cluster;
+            this.cluster = fixture.Cluster;
         }
+
         [Theory]
         [InlineData(3000, 4000, 1)]
         [InlineData(3001, 4001, 100)]
@@ -26,9 +28,9 @@ namespace Vertex.TxRuntime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, times).Select(i => Guid.NewGuid().ToString()).ToList();
-            var fromAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(fromId);
-            var toAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(toId);
-            var txUnit = _cluster.GrainFactory.GetGrain<ITransferDtxUnit>(times);
+            var fromAccountActor = this.cluster.GrainFactory.GetGrain<IDTxAccount>(fromId);
+            var toAccountActor = this.cluster.GrainFactory.GetGrain<IDTxAccount>(toId);
+            var txUnit = this.cluster.GrainFactory.GetGrain<ITransferDtxUnit>(times);
 
             await Task.WhenAll(Enumerable.Range(0, times).Select(i => fromAccountActor.NoTxTopUp(topupAmount, guids[i])));
             var fromSnapshot = await fromAccountActor.GetSnapshot();
@@ -63,6 +65,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
             var unitDocuments = await txUnit.GetEventDocuments(1, times * 5);
             Assert.True(unitDocuments.Count == times * 3);
         }
+
         [Theory]
         [InlineData(30000, 40000, 2)]
         [InlineData(30001, 40001, 200)]
@@ -72,9 +75,9 @@ namespace Vertex.TxRuntime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, times).Select(i => Guid.NewGuid().ToString()).ToList();
-            var fromAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(fromId);
-            var toAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(toId);
-            var txUnit = _cluster.GrainFactory.GetGrain<ITransferDtxUnit>(times);
+            var fromAccountActor = this.cluster.GrainFactory.GetGrain<IDTxAccount>(fromId);
+            var toAccountActor = this.cluster.GrainFactory.GetGrain<IDTxAccount>(toId);
+            var txUnit = this.cluster.GrainFactory.GetGrain<ITransferDtxUnit>(times);
 
             await Task.WhenAll(Enumerable.Range(0, times).Select(i => fromAccountActor.NoTxTopUp(topupAmount, guids[i])));
             var fromSnapshot = await fromAccountActor.GetSnapshot();
@@ -109,6 +112,7 @@ namespace Vertex.TxRuntime.Test.ActorTest
             var unitDocuments = await txUnit.GetEventDocuments(1, times * 3);
             Assert.True(unitDocuments.Count == 0);
         }
+
         [Theory]
         [InlineData(300000, 400000, 3)]
         [InlineData(300001, 400001, 300)]
@@ -118,9 +122,9 @@ namespace Vertex.TxRuntime.Test.ActorTest
         {
             decimal topupAmount = 100;
             var guids = Enumerable.Range(0, times).Select(i => Guid.NewGuid().ToString()).ToList();
-            var fromAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount>(fromId);
-            var toAccountActor = _cluster.GrainFactory.GetGrain<IDTxAccount_Error>(toId);
-            var txUnit = _cluster.GrainFactory.GetGrain<ITransferDtxUnit_Error>(times);
+            var fromAccountActor = this.cluster.GrainFactory.GetGrain<IDTxAccount>(fromId);
+            var toAccountActor = this.cluster.GrainFactory.GetGrain<IDTxAccount_Error>(toId);
+            var txUnit = this.cluster.GrainFactory.GetGrain<ITransferDtxUnit_Error>(times);
 
             await Task.WhenAll(Enumerable.Range(0, times).Select(i => fromAccountActor.NoTxTopUp(topupAmount, guids[i])));
             var fromSnapshot = await fromAccountActor.GetSnapshot();

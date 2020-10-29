@@ -21,31 +21,32 @@ namespace Vertex.TxRuntime.Test.Biz.Actors
         {
             try
             {
-                var result = await GrainFactory.GetGrain<IDTxAccount>(request.FromId).Transfer(request.ToId, request.Amount);
+                var result = await this.GrainFactory.GetGrain<IDTxAccount>(request.FromId).Transfer(request.ToId, request.Amount);
                 if (result && request.Success)
                 {
-                    await GrainFactory.GetGrain<IDTxAccount_Error>(request.ToId).TransferArrived(request.Amount);
-                    await Commit();
+                    await this.GrainFactory.GetGrain<IDTxAccount_Error>(request.ToId).TransferArrived(request.Amount);
+                    await this.Commit();
                     return true;
                 }
                 else
                 {
-                    await Rollback();
+                    await this.Rollback();
                     return false;
                 }
             }
             catch
             {
-                await Rollback();
+                await this.Rollback();
                 throw;
             }
         }
+
         protected override IDTxActor[] EffectActors(TransferRequest request)
         {
             return new IDTxActor[]
             {
-                GrainFactory.GetGrain<IDTxAccount>(request.FromId),
-                GrainFactory.GetGrain<IDTxAccount_Error>(request.ToId),
+                this.GrainFactory.GetGrain<IDTxAccount>(request.FromId),
+                this.GrainFactory.GetGrain<IDTxAccount_Error>(request.ToId),
             };
         }
     }

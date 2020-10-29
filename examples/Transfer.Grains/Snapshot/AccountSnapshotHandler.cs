@@ -9,14 +9,17 @@ namespace Transfer.Grains.Snapshot
         {
             state.Balance = evt.Balance;
         }
+
         public void EventHandle(AccountSnapshot state, TransferArrivedEvent evt)
         {
             state.Balance = evt.Balance;
         }
+
         public void EventHandle(AccountSnapshot state, TransferEvent evt)
         {
             state.Balance = evt.Balance;
         }
+
         public void EventHandle(AccountSnapshot state, TransferRefundsEvent evt)
         {
             state.Balance = evt.Balance;

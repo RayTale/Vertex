@@ -1,9 +1,9 @@
 ﻿namespace Vertex.Abstractions.Snapshot
 {
-    public record SnapshotUnit<PrimaryKey, T>
+    public record SnapshotUnit<TPrimaryKey, T>
         where T : ISnapshot
     {
-        public SnapshotMeta<PrimaryKey> Meta { get; set; }
+        public SnapshotMeta<TPrimaryKey> Meta { get; set; }
 
         public T Data { get; set; }
     }

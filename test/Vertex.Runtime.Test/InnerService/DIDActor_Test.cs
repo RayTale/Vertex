@@ -1,7 +1,7 @@
-﻿using Orleans.TestingHost;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
+using Orleans.TestingHost;
 using Vertex.Abstractions.InnerService;
 using Vertex.Runtime.Core;
 using Xunit;
@@ -11,12 +11,13 @@ namespace Vertex.Runtime.Test.InnerService
     [Collection(ClusterCollection.Name)]
     public class DIDActor_Test
     {
-        private readonly TestCluster _cluster;
+        private readonly TestCluster cluster;
 
         public DIDActor_Test(ClusterFixture fixture)
         {
-            _cluster = fixture.Cluster;
+            this.cluster = fixture.Cluster;
         }
+
         [Theory]
         [InlineData(100)]
         [InlineData(1000)]
@@ -26,7 +27,7 @@ namespace Vertex.Runtime.Test.InnerService
         public async Task DIDActor(int count)
         {
             var idDict = new ConcurrentDictionary<long, bool>();
-            var idActor = _cluster.GrainFactory.GetGrain<IDIDActor>("0");
+            var idActor = this.cluster.GrainFactory.GetGrain<IDIDActor>("0");
             await Task.WhenAll(Enumerable.Range(0, count).Select(async i =>
             {
                 var id = await idActor.NewID();
