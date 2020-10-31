@@ -28,7 +28,7 @@
     <PackageReference Include="Lindhart.Analyser.MissingAwaitWarning" />
     <PackageReference Include="Microsoft.CodeQuality.Analyzers" />
     <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" />
-    <!-- <PackageReference Include="Nerdbank.GitVersioning" /> -->
+    <PackageReference Include="Nerdbank.GitVersioning" />
     <PackageReference Include="StyleCop.Analyzers" />
   </ItemGroup>
 </Project>
