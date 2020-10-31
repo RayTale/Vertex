@@ -172,7 +172,7 @@ namespace Vertex.Utils.Channels
                 joinConsumer.Dispose();
             }
 
-            this.buffer.Writer.Complete();
+            this.buffer.Writer.TryComplete();
         }
     }
 }

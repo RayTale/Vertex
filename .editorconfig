@@ -41,3 +41,5 @@ dotnet_diagnostic.IDE0022.severity = none
 dotnet_diagnostic.CA1031.severity = none
 # CA1062: 验证公共方法的参数
 dotnet_diagnostic.CA1062.severity = none
+# CA2007: 考虑对等待的任务调用 ConfigureAwait
+dotnet_diagnostic.CA2007.severity = none
