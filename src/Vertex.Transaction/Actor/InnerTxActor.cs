@@ -51,10 +51,8 @@ namespace Vertex.Transaction.Actor
 
         protected override async Task RecoverySnapshot()
         {
-            await base.RecoverySnapshot().ConfigureAwait(true);
-#pragma warning disable SA1101 // Prefix local calls with this
+            await base.RecoverySnapshot();
             this.BackupSnapshot = this.Snapshot with { Data = this.Snapshot.Data.Clone(this.Serializer), Meta = this.Snapshot.Meta with { } };
-#pragma warning restore SA1101 // Prefix local calls with this
         }
 
         protected async Task BeginTransaction(string txId = default)
@@ -66,7 +64,7 @@ namespace Vertex.Transaction.Actor
 
             if (this.TxTimeout())
             {
-                if (await this.TxTimeoutLock.WaitAsync(this.VertexTxOptions.TxSecondsTimeout * 1000).ConfigureAwait(true))
+                if (await this.TxTimeoutLock.WaitAsync(this.VertexTxOptions.TxSecondsTimeout * 1000))
                 {
                     try
                     {
@@ -76,7 +74,7 @@ namespace Vertex.Transaction.Actor
                             {
                                 this.Logger.LogInformation("Tx timeout: {0}->{1}->{2}", this.ActorType.Name, this.ActorId.ToString(), txId);
                             }
-                            await this.Rollback(this.TxSnapshot.TxId).ConfigureAwait(true); // Automatic rollback of transaction timeout
+                            await this.Rollback(this.TxSnapshot.TxId); // Automatic rollback of transaction timeout
                         }
                     }
                     finally
@@ -86,7 +84,7 @@ namespace Vertex.Transaction.Actor
                 }
             }
 
-            if (await this.TxBeginLock.WaitAsync(this.VertexTxOptions.TxSecondsTimeout * 1000).ConfigureAwait(true))
+            if (await this.TxBeginLock.WaitAsync(this.VertexTxOptions.TxSecondsTimeout * 1000))
             {
                 try
                 {
@@ -129,13 +127,13 @@ namespace Vertex.Transaction.Actor
             {
                 try
                 {
-                    await this.OnTxCommit(txId).ConfigureAwait(true);
+                    await this.OnTxCommit(txId);
                     foreach (var transport in this.WaitingCommitEventList)
                     {
-                        await this.OnRaiseStart(transport.EventUnit).ConfigureAwait(true);
+                        await this.OnRaiseStart(transport.EventUnit);
                     }
-                    await this.EventStorage.TxAppend(this.WaitingCommitEventList.Select(o => o.Document).ToList()).ConfigureAwait(true);
-                    await this.OnTxCommited(txId).ConfigureAwait(true);
+                    await this.EventStorage.TxAppend(this.WaitingCommitEventList.Select(o => o.Document).ToList());
+                    await this.OnTxCommited(txId);
                     this.TxSnapshot.Status = Abstractions.TransactionStatus.Commited;
                     if (this.Logger.IsEnabled(LogLevel.Trace))
                     {
@@ -163,15 +161,15 @@ namespace Vertex.Transaction.Actor
 
                 if (this.WaitingCommitEventList.Count > 0)
                 {
-                    await this.OnTxFinsh(txId).ConfigureAwait(true);
+                    await this.OnTxFinsh(txId);
 
                     // If the copy snapshot is not updated, update the copy set
                     foreach (var transport in this.WaitingCommitEventList)
                     {
-                        await this.OnRaiseSuccess(transport.EventUnit, transport.EventBytes).ConfigureAwait(true);
+                        await this.OnRaiseSuccess(transport.EventUnit, transport.EventBytes);
                     }
 
-                    await this.SaveSnapshotAsync().ConfigureAwait(true);
+                    await this.SaveSnapshotAsync();
 
                     if (this.EventStream != default)
                     {
@@ -179,12 +177,12 @@ namespace Vertex.Transaction.Actor
                         {
                             foreach (var transport in this.WaitingCommitEventList)
                             {
-                                await this.EventStream.Next(transport.GetEventTransSpan().ToArray()).ConfigureAwait(true);
+                                await this.EventStream.Next(transport.GetEventTransSpan().ToArray());
                             }
                         }
                         catch (Exception ex)
                         {
-                            this.Logger.LogError(ex, nameof(this.EventStream.Next));
+                            this.Logger.LogError(ex, ex.Message);
                         }
                     }
 
@@ -209,10 +207,10 @@ namespace Vertex.Transaction.Actor
                     if (this.Snapshot.Meta.Version >= this.TxSnapshot.TxStartVersion)
                     {
                         var oldSnapshot = this.TxSnapshot with { };
-                        await this.OnTxRollback(txId).ConfigureAwait(true);
+                        await this.OnTxRollback(txId);
                         if (oldSnapshot.Status == Abstractions.TransactionStatus.Commited)
                         {
-                            await this.EventStorage.DeleteAfter(this.Snapshot.Meta.ActorId, oldSnapshot.TxStartVersion).ConfigureAwait(true);
+                            await this.EventStorage.DeleteAfter(this.Snapshot.Meta.ActorId, oldSnapshot.TxStartVersion);
                         }
                         if (this.BackupSnapshot.Meta.Version == oldSnapshot.TxStartVersion - 1)
                         {
@@ -224,7 +222,7 @@ namespace Vertex.Transaction.Actor
                         }
                         else
                         {
-                            await this.RecoverySnapshot().ConfigureAwait(true);
+                            await this.RecoverySnapshot();
                         }
 
                         this.WaitingCommitEventList.Clear();
@@ -287,11 +285,11 @@ namespace Vertex.Transaction.Actor
         /// Transactional event submission
         /// The transaction must be opened before using this function, otherwise an exception will occur
         /// </summary>
-        /// <param name="evt">Event</param>
+        /// <param name="event">Event</param>
         /// <param name="flowId">flow id</param>
         /// <param name="txId">transaction id</param>
         /// <returns></returns>
-        protected virtual ValueTask TxRaiseEvent(IEvent evt, string flowId = default, string txId = default)
+        protected virtual ValueTask TxRaiseEvent(IEvent @event, string flowId = default, string txId = default)
         {
             if (string.IsNullOrEmpty(flowId))
             {
@@ -312,7 +310,7 @@ namespace Vertex.Transaction.Actor
                 var fullyEvent = new EventUnit<TPrimaryKey>
                 {
                     ActorId = this.ActorId,
-                    Event = evt,
+                    Event = @event,
                     Meta = new EventMeta
                     {
                         FlowId = flowId,
@@ -330,7 +328,7 @@ namespace Vertex.Transaction.Actor
             }
             catch (Exception ex)
             {
-                this.Logger.LogCritical(ex, "TxRaiseEvent failed: {0}->{1}->{2}", this.ActorType.FullName, this.Serializer.Serialize(evt, evt.GetType()), this.Serializer.Serialize(this.Snapshot));
+                this.Logger.LogCritical(ex, "TxRaiseEvent failed: {0}->{1}->{2}", this.ActorType.FullName, this.Serializer.Serialize(@event, @event.GetType()), this.Serializer.Serialize(this.Snapshot));
                 this.Snapshot.Meta.DecrementDoingVersion(); // Restore the doing version
                 throw;
             }
