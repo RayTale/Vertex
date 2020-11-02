@@ -32,7 +32,7 @@
     <PackageReference Update="Confluent.Kafka" Version="1.5.2" />
     <PackageReference Update="RabbitMQ.Client" Version="6.2.1" />
     <PackageReference Update="System.Reactive" Version="4.4.1" />
-    <PackageReference Update="linq2db" Version="3.1.5" />
+    <PackageReference Update="linq2db" Version="3.1.6" />
     <PackageReference Update="IdGen" Version="3.0.0" />
 
     <PackageReference Update="Lindhart.Analyser.MissingAwaitWarning" Version="2.0.0-beta2" PrivateAssets="All" />
