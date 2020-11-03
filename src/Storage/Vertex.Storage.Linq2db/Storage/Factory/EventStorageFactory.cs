@@ -17,7 +17,7 @@ namespace Vertex.Storage.Linq2db.Storage
     public class EventStorageFactory : IEventStorageFactory
     {
         private readonly ConcurrentDictionary<Type, EventStorageAttribute> typeAttributes = new ConcurrentDictionary<Type, EventStorageAttribute>();
-        private readonly ConcurrentDictionary<string, Task<object>> eventStorageDict = new ConcurrentDictionary<string, Task<object>>();
+        private readonly ConcurrentDictionary<string, Lazy<Task<object>>> eventStorageDict = new ConcurrentDictionary<string, Lazy<Task<object>>>();
         private readonly DbFactory dbFactory;
         private readonly IGrainFactory grainFactory;
         private readonly IServiceProvider serviceProvider;
@@ -44,7 +44,8 @@ namespace Vertex.Storage.Linq2db.Storage
                 }
             });
             var tableName = attribute.ShardingFunc(actor.ActorId.ToString());
-            var storage = await this.eventStorageDict.GetOrAdd($"{attribute.OptionName}_{tableName}", async key =>
+            var storage = await this.eventStorageDict.GetOrAdd($"{attribute.OptionName}_{tableName}", key =>
+              new Lazy<Task<object>>(async () =>
               {
                   using var db = this.dbFactory.GetEventDb(attribute.OptionName);
                   await db.CreateTableIfNotExists<EventEntity<TPrimaryKey>>(this.grainFactory, key, tableName, async () =>
@@ -54,7 +55,7 @@ namespace Vertex.Storage.Linq2db.Storage
                       await indexGenerator.CreateUniqueIndexIfNotExists(db, tableName, $"{tableName}_event_flow_unique", nameof(EventEntity<TPrimaryKey>.ActorId).ToLower(), nameof(EventEntity<TPrimaryKey>.Name).ToLower(), nameof(EventEntity<TPrimaryKey>.FlowId).ToLower());
                   });
                   return new EventStorage<TPrimaryKey>(this.serviceProvider, this.dbFactory, attribute.OptionName, tableName);
-              });
+              })).Value;
             return storage as IEventStorage<TPrimaryKey>;
         }
     }
