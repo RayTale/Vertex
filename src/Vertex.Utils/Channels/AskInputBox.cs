@@ -9,7 +9,7 @@ namespace Vertex.Utils.Channels
             this.Value = data;
         }
 
-        public TaskCompletionSource<TOutput> TaskSource { get; } = new TaskCompletionSource<TOutput>();
+        public TaskCompletionSource<TOutput> TaskSource { get; } = new TaskCompletionSource<TOutput>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public TInput Value { get; set; }
     }

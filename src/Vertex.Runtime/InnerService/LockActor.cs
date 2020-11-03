@@ -30,7 +30,7 @@ namespace Vertex.Runtime.InnerService
             }
             else
             {
-                var taskSource = new TaskCompletionSource<bool>();
+                var taskSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 if (millisecondsDelay != 0)
                 {
                     using var tc = new CancellationTokenSource(millisecondsDelay);
