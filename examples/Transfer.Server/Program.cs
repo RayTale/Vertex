@@ -70,7 +70,7 @@ namespace Transfer.Server
                         {
                             Name = Consts.CoreDbName,
                             ProviderName = "PostgreSQL",
-                            ConnectionString = "Server=localhost;Port=5432;Database=Vertex;User Id=postgres;Password=postgres;Pooling=true;MaxPoolSize=20;",
+                            ConnectionString = "Server=172.16.4.102;Port=5432;Database=Vertex;User Id=postgres;Password=postgres;Pooling=true;MaxPoolSize=20;",
                         },
 
                         // new Vertex.Storage.Linq2db.Options.ConnectionOptions

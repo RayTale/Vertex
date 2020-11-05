@@ -1,12 +1,11 @@
-﻿using Vertex.Abstractions.Serialization;
+﻿using Transfer.Repository.Entities;
+using Vertex.Abstractions.Serialization;
 using Vertex.Transaction.Abstractions.Snapshot;
 
 namespace Transfer.Grains.Snapshot
 {
-    public class AccountSnapshot : ITxSnapshot<AccountSnapshot>
+    public class AccountSnapshot : Account, ITxSnapshot<AccountSnapshot>
     {
-        public decimal Balance { get; set; }
-
         public AccountSnapshot Clone(ISerializer serializer)
         {
             return new AccountSnapshot

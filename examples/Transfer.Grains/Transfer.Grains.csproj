@@ -13,6 +13,7 @@
     <ProjectReference Include="..\..\src\Vertex.Runtime\Vertex.Runtime.csproj" />
     <ProjectReference Include="..\..\src\Vertex.Transaction\Vertex.Transaction.csproj" />
     <ProjectReference Include="..\Transfer.IGrains\Transfer.IGrains.csproj" />
+    <ProjectReference Include="..\Transfer.Repository\Transfer.Repository.csproj" />
   </ItemGroup>
 
 </Project>
