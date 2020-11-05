@@ -1,4 +1,4 @@
-name: vertex build
+name: publish nuget
 
 on:
   push:
