@@ -2,11 +2,7 @@ name: vertex build
 
 on:
   push:
-    branches:
-      - "main"
-      - "release"
-    tags:
-      - v*
+    branches: "*"
   pull_request:
     branches: "*"
 
@@ -20,12 +16,6 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 5.0.100-rc.2.20479.15
-          fetch-depth: 0
-
-      - uses: dotnet/nbgv@master
-        with:
-          setAllVars: true 
-      - run: echo "NuGetPackageVersion $NBGV_NuGetPackageVersion"
 
       - name: Install dependencies
         run: dotnet restore
@@ -40,11 +30,3 @@ jobs:
           name: Test Results
           # A file, directory or wildcard pattern that describes what to upload
           path: "**/*.trx"
-
-      - name: Pack the NuGets
-        run: dotnet pack --configuration Release --no-build -o . -p:PackageVersion=$NBGV_NuGetPackageVersion
-
-      - name: Publish NuGet
-        run: |
-          cd $GITHUB_WORKSPACE/src
-          dotnet nuget push *.*nupkg --api-key ${{ secrets.nugetkey }} --skip-duplicate --source https://api.nuget.org/v3/index.json
