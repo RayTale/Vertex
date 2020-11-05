@@ -20,11 +20,12 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 5.0.100-rc.2.20479.15
+          fetch-depth: 0
 
       - uses: dotnet/nbgv@master
         with:
           setAllVars: true 
-      - run: echo "NBGV_SemVer2 $NBGV_SemVer2"
+      - run: echo "NuGetPackageVersion $NBGV_NuGetPackageVersion"
 
       - name: Install dependencies
         run: dotnet restore
@@ -41,7 +42,7 @@ jobs:
           path: "**/*.trx"
 
       - name: Pack the NuGets
-        run: dotnet pack --configuration Release --no-build -o . -p:PackageVersion=$NBGV_SemVer2
+        run: dotnet pack --configuration Release --no-build -o . -p:PackageVersion=$NBGV_NuGetPackageVersion
 
       - name: Publish NuGet
         run: |
