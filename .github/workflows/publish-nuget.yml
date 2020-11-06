@@ -38,4 +38,4 @@ jobs:
         run: dotnet pack --configuration Release --no-build --output nupkgs -p:PackageVersion=$NBGV_NuGetPackageVersion
 
       - name: Publish NuGet
-        run: dotnet nuget push nupkgs/*.*nupkg --api-key ${{ secrets.nugetkey }} --skip-duplicate --source https://api.nuget.org/v3/index.json
+        run: dotnet nuget push nupkgs/*.*nupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
