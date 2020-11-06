@@ -8,7 +8,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/RayTale/Vertex</PackageProjectUrl>
     <RepositoryUrl>https://github.com/RayTale/Vertex.git</RepositoryUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/RayTale/Vertex/main/logo.png</PackageIconUrl>
+    <PackageIcon>logo.png</PackageIcon>
     <PackageTags>orleans,event-sourcing,actor,Vertex</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
