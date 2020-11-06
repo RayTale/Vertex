@@ -33,7 +33,7 @@ namespace Vertex.Transaction.Actor
 
         protected async override ValueTask DependencyInjection()
         {
-            this.DtxOptions = this.ServiceProvider.GetService<IOptionsSnapshot<VertexDtxOptions>>().Get(this.ActorType.FullName);
+            this.DtxOptions = this.ServiceProvider.GetService<IOptionsMonitor<VertexDtxOptions>>().Get(this.ActorType.FullName);
             var txEventStorageFactory = this.ServiceProvider.GetService<ITxEventStorageFactory>();
             this.TxEventStorage = await txEventStorageFactory.Create(this);
             await base.DependencyInjection();
