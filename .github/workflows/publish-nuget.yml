@@ -35,11 +35,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Pack the NuGets
-        run: |
-          cd $GITHUB_WORKSPACE/src
-          dotnet pack --configuration Release --no-build -o . -p:PackageVersion=$NBGV_NuGetPackageVersion
+        run: dotnet pack --configuration Release --no-build --output nupkgs -p:PackageVersion=$NBGV_NuGetPackageVersion
 
       - name: Publish NuGet
-        run: |
-          cd $GITHUB_WORKSPACE/src
-          dotnet nuget push **/*.nupkg --api-key ${{ secrets.nugetkey }} --skip-duplicate --source https://api.nuget.org/v3/index.json
+        run: dotnet nuget push nupkgs/*.*nupkg --api-key ${{ secrets.nugetkey }} --skip-duplicate --source https://api.nuget.org/v3/index.json
