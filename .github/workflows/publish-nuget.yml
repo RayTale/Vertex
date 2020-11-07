@@ -2,13 +2,8 @@ name: publish nuget
 
 on:
   push:
-    branches:
-      - "main"
-      - "release"
-    tags:
-      - v*
-  pull_request:
-    branches: "*"
+    release:
+      - "published"
 
 jobs:
   build:
