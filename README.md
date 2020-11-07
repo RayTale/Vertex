@@ -1,13 +1,12 @@
-## Vertex是一个基于Orleans开发的分布式跨平台框架，用于构建高性能、高事务吞吐、低延时、可扩展的分布式应用程序。
+## Vertex是一个基于Orleans开发的分布式、最终一致性、事件溯源的跨平台框架，用于构建高性能、高吞吐、低延时、可扩展的分布式应用程序
 
-* 框架采用Event sourcing来解决分布式事务问题，除了提供超高吞吐的分布式事务能力之外，还提供状态变化的详细事件日志，易于追踪溯源，在某些领域有着天然的优势。
-  
-* 基于. Net 5.0和Orleans开发，支持从单个本地服务器扩展到多服务器集群，提供高可用能力。
-
----
 [![license](https://img.shields.io/github/license/RayTale/Vertex)](https://github.com/RayTale/Vertex/blob/main/LICENSE)
 [![NuGet](https://img.shields.io/nuget/v/Vertex.Runtime.svg?style=flat)](https://www.nuget.org/profiles/uless)
 [![Join the chat at https://gitter.im/RayTale/Ray](https://badges.gitter.im/RayTale/Ray.svg)](https://gitter.im/RayTale/Ray?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+---
+* 框架采用Event sourcing来解决分布式事务问题，除了提供超高吞吐的分布式事务能力之外，还提供状态变化的详细事件日志，易于追踪溯源，在某些领域有着天然的优势。
+  
+* 基于. Net 5.0和Orleans开发，支持从单个本地服务器扩展到多服务器集群，提供高可用能力。
 ---
 
 ### 项目起源
