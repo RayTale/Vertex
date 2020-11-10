@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Threading.Tasks;
+using AutoMapper;
 using LinqToDB.Data;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
@@ -109,6 +110,8 @@ namespace Transfer.Server
                     {
                         options.CollectionAge = TimeSpan.FromMinutes(5);
                     });
+
+                    serviceCollection.AddAutoMapper(typeof(Account));
                 })
                 .ConfigureLogging(logging =>
                 {

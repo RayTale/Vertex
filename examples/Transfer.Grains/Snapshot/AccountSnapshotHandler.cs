@@ -1,4 +1,5 @@
 ﻿using Transfer.Grains.Events;
+using Transfer.Repository.Entities;
 using Vertex.Runtime.Snapshot;
 
 namespace Transfer.Grains.Snapshot
@@ -7,22 +8,42 @@ namespace Transfer.Grains.Snapshot
     {
         public void EventHandle(AccountSnapshot state, TopupEvent evt)
         {
-            state.Balance = evt.Balance;
+            EntityHandle(state, evt);
+        }
+
+        public void EntityHandle(Account entity, TopupEvent evt)
+        {
+            entity.Balance = evt.Balance;
         }
 
         public void EventHandle(AccountSnapshot state, TransferArrivedEvent evt)
         {
-            state.Balance = evt.Balance;
+            EntityHandle(state, evt);
+        }
+
+        public void EntityHandle(Account entity, TransferArrivedEvent evt)
+        {
+            entity.Balance = evt.Balance;
         }
 
         public void EventHandle(AccountSnapshot state, TransferEvent evt)
         {
-            state.Balance = evt.Balance;
+            EntityHandle(state, evt);
+        }
+
+        public void EntityHandle(Account entity, TransferEvent evt)
+        {
+            entity.Balance = evt.Balance;
         }
 
         public void EventHandle(AccountSnapshot state, TransferRefundsEvent evt)
         {
-            state.Balance = evt.Balance;
+            EntityHandle(state, evt);
+        }
+
+        public void EntityHandle(Account entity, TransferRefundsEvent evt)
+        {
+            entity.Balance = evt.Balance;
         }
     }
 }

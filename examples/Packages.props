@@ -7,6 +7,11 @@
    <PackageReference Update="Microsoft.Data.Sqlite" Version="5.0.0-rc.2.20475.6" />
    <PackageReference Update="MySqlConnector" Version="1.1.0-beta.1" />
    <PackageReference Update="Npgsql" Version="5.0.0-preview1" />
-   <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="5.0.0-rc2" />
+   <PackageReference Update="Npgsql.EntityFrameworkCore.PostgreSQL" Version="5.0.0-rc2" />
+   <PackageReference Update="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.0"/>
+    <PackageReference Update="Microsoft.EntityFrameworkCore.Tools" Version="5.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
  </ItemGroup>
 </Project>
