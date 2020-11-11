@@ -19,7 +19,6 @@ namespace Vertex.Runtime
             serviceCollection.AddSingleton<ISerializer, DefaultJsonSerializer>();
             serviceCollection.AddSingleton<IEventTypeContainer, EventTypeContainer>();
             serviceCollection.AddSingleton(typeof(TaskSourcePool<>));
-            serviceCollection.AutoAddSnapshotHandler();
         }
 
         private static void AutoAddSnapshotHandler(this IServiceCollection serviceCollection)
