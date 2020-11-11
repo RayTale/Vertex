@@ -11,16 +11,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-            fetch-depth: 0
+          fetch-depth: 0
 
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 5.0.100-rc.2.20479.15
+          dotnet-version: 5.0.100
 
       - uses: dotnet/nbgv@master
         with:
-          setAllVars: true 
+          setAllVars: true
       - run: echo "NuGetPackageVersion $NBGV_NuGetPackageVersion"
 
       - name: Install dependencies
