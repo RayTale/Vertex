@@ -16,6 +16,7 @@ using Transfer.Grains.Common;
 using Transfer.IGrains.DTx;
 using Vertex.Runtime;
 using Vertex.Runtime.InnerService;
+using Vertex.Runtime.Options;
 using Vertex.Storage.Linq2db;
 using Vertex.Storage.Linq2db.Core;
 using Vertex.Stream.InMemory;
@@ -67,25 +68,25 @@ namespace Transfer.Server
                         // serviceCollection.AddSingleton(memorySQLiteConnection);
                         config.Connections = new Vertex.Storage.Linq2db.Options.ConnectionOptions[]
                         {
-                        new Vertex.Storage.Linq2db.Options.ConnectionOptions
-                        {
-                            Name = Consts.CoreDbName,
-                            ProviderName = "PostgreSQL",
-                            ConnectionString = "Server=172.16.4.102;Port=5432;Database=Vertex;User Id=postgres;Password=postgres;Pooling=true;MaxPoolSize=20;",
-                        },
+                        // new Vertex.Storage.Linq2db.Options.ConnectionOptions
+                        // {
+                        //    Name = Consts.CoreDbName,
+                        //    ProviderName = "PostgreSQL",
+                        //    ConnectionString = "Server=localhost;Port=5432;Database=Vertex;User Id=postgres;Password=postgres;Pooling=true;MaxPoolSize=20;",
+                        // },
 
                         // new Vertex.Storage.Linq2db.Options.ConnectionOptions
                         // {
-                        //    Name = Consts.core_db_Name,
+                        //    Name = Consts.CoreDbName,
                         //    ProviderName = "MySql",
                         //    ConnectionString = "Server=localhost;Database=Vertex;UserId=root;Password=root;pooling=true;maxpoolsize=50;ConnectionLifeTime=30;"
                         // },
-                        // new Vertex.Storage.Linq2db.Options.ConnectionOptions
-                        // {
-                        //    Name = Consts.core_db_Name,
-                        //    ProviderName = "SQLite.MS",
-                        //    ConnectionString = "Data Source=InMemorySample;Mode=Memory;Cache=Shared"
-                        // }
+                         new Vertex.Storage.Linq2db.Options.ConnectionOptions
+                         {
+                            Name = Consts.CoreDbName,
+                            ProviderName = "SQLite.MS",
+                            ConnectionString = "Data Source=Vertex.SQLite.db;"
+                         }
                         };
                     }, new EventArchivePolicy("month", (name, time) => $"Vertex_Archive_{name}_{DateTimeOffset.FromUnixTimeSeconds(time).ToString("yyyyMM")}".ToLower(), table => table.StartsWith("Vertex_Archive".ToLower())));
 
@@ -110,8 +111,14 @@ namespace Transfer.Server
                     {
                         options.CollectionAge = TimeSpan.FromMinutes(5);
                     });
-
-                    serviceCollection.AddAutoMapper(typeof(Account));
+                    serviceCollection.ConfigureAll<SubActorOptions>(options =>
+                    {
+                        options.SnapshotVersionInterval = 1;
+                    });
+                    serviceCollection.Configure<SubActorOptions>(typeof(AccountFlow).FullName, options =>
+                     {
+                         options.SnapshotVersionInterval = 10;
+                     });
                 })
                 .ConfigureLogging(logging =>
                 {

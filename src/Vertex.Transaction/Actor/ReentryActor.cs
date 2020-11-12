@@ -48,7 +48,7 @@ namespace Vertex.Transaction.Actor
                     throw new ArgumentNullException(nameof(flowId));
                 }
             }
-            var taskSource = new TaskCompletionSource<bool>();
+            var taskSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             await this.RequestChannel.WriteAsync(new TxEventTaskBox<SnapshotUnit<TPrimaryKey, T>>(default, flowId, handler, taskSource));
             return await taskSource.Task;
         }
