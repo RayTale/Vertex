@@ -68,12 +68,12 @@ namespace Transfer.Server
                         // serviceCollection.AddSingleton(memorySQLiteConnection);
                         config.Connections = new Vertex.Storage.Linq2db.Options.ConnectionOptions[]
                         {
-                        // new Vertex.Storage.Linq2db.Options.ConnectionOptions
-                        // {
-                        //    Name = Consts.CoreDbName,
-                        //    ProviderName = "PostgreSQL",
-                        //    ConnectionString = "Server=localhost;Port=5432;Database=Vertex;User Id=postgres;Password=postgres;Pooling=true;MaxPoolSize=20;",
-                        // },
+                         new Vertex.Storage.Linq2db.Options.ConnectionOptions
+                         {
+                            Name = Consts.CoreDbName,
+                            ProviderName = "PostgreSQL",
+                            ConnectionString = "Server=localhost;Port=5432;Database=Vertex;User Id=postgres;Password=postgres;Pooling=true;MaxPoolSize=20;",
+                         },
 
                         // new Vertex.Storage.Linq2db.Options.ConnectionOptions
                         // {
@@ -81,12 +81,12 @@ namespace Transfer.Server
                         //    ProviderName = "MySql",
                         //    ConnectionString = "Server=localhost;Database=Vertex;UserId=root;Password=root;pooling=true;maxpoolsize=50;ConnectionLifeTime=30;"
                         // },
-                         new Vertex.Storage.Linq2db.Options.ConnectionOptions
-                         {
-                            Name = Consts.CoreDbName,
-                            ProviderName = "SQLite.MS",
-                            ConnectionString = "Data Source=Vertex.SQLite.db;"
-                         }
+                         //new Vertex.Storage.Linq2db.Options.ConnectionOptions
+                         //{
+                         //   Name = Consts.CoreDbName,
+                         //   ProviderName = "SQLite.MS",
+                         //   ConnectionString = "Data Source=Vertex.SQLite.db;"
+                         //}
                         };
                     }, new EventArchivePolicy("month", (name, time) => $"Vertex_Archive_{name}_{DateTimeOffset.FromUnixTimeSeconds(time).ToString("yyyyMM")}".ToLower(), table => table.StartsWith("Vertex_Archive".ToLower())));
 
@@ -119,6 +119,7 @@ namespace Transfer.Server
                      {
                          options.SnapshotVersionInterval = 10;
                      });
+                    serviceCollection.AddAutoMapper(typeof(Account));
                 })
                 .ConfigureLogging(logging =>
                 {
