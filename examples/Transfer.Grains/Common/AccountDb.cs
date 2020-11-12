@@ -1,8 +1,7 @@
-﻿using System.Threading.Tasks;
-using AutoMapper;
-using IdGen;
+﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Orleans;
+using System.Threading.Tasks;
 using Transfer.Grains.Events;
 using Transfer.Grains.Snapshot;
 using Transfer.IGrains.Common;
@@ -30,6 +29,28 @@ namespace Transfer.Grains.Common
         }
 
         public override IVertexActor Vertex => this.grainFactory.GetGrain<IAccount>(this.ActorId);
+
+        public async Task EventHandle(CreateEvent evt, EventMeta eventBase)
+        {
+            using (var db = new TransferDbContext())
+            {
+                try
+                {
+                    var entity = new Repository.Entities.Account()
+                    {
+                        Id = this.ActorId
+                    };
+
+                    this.accountSnapshotHandler.EntityHandle(entity, evt);
+                    db.Accounts.Add(entity);
+                    await db.SaveChangesAsync();
+                }
+                catch (System.Exception e)
+                {
+                    e.PGExceptionHandler<AccountDb>();
+                }
+            }
+        }
 
         public async Task EventHandle(TransferEvent evt, EventMeta eventBase)
         {

@@ -32,6 +32,7 @@ namespace Vertex.Runtime
                     if (genericInterface != null)
                     {
                         serviceCollection.AddSingleton(genericInterface, type);
+                        serviceCollection.AddSingleton(type);
                     }
                 }
             }

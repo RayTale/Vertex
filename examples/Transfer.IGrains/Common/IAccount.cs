@@ -7,6 +7,8 @@ namespace Transfer.IGrains.Common
 {
     public interface IAccount : IVertexActor, IGrainWithIntegerKey
     {
+        Task<bool> Create(decimal amount, string createId);
+
         /// <summary>
         /// Get account balance
         /// </summary>

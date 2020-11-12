@@ -20,10 +20,8 @@ namespace Transfer.Repository.Migrations
 
             modelBuilder.Entity("Transfer.Repository.Entities.Account", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint");
 
                     b.Property<decimal>("Balance")
                         .HasColumnType("numeric");

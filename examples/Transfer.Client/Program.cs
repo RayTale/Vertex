@@ -41,12 +41,27 @@ namespace Transfer.Client
                 Console.WriteLine("Please enter the number of account");
                 var accountCount = int.Parse(Console.ReadLine() ?? "10");
                 Console.WriteLine("Please enter the number of executions");
+
                 var times = int.Parse(Console.ReadLine() ?? "10");
-                var topupWatch = new Stopwatch();
                 var topupTaskList = new List<Task>();
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
-                    topupTaskList.AddRange(Enumerable.Range(0, times).Select(x => client.GetGrain<IAccount>(account).TopUp(100, IdGen.CreateId().ToString())));
+                    var actor1 = client.GetGrain<IAccount>(account);
+                    await actor1.Create(0, IdGen.CreateId().ToString());
+                    Console.WriteLine($"The balance of account {account} is{await actor1.GetBalance()}");
+                    var actor2 = client.GetGrain<IAccount>(account + accountCount);
+                    await actor2.Create(0, IdGen.CreateId().ToString());
+                    Console.WriteLine($"The balance of account {account + accountCount} is{await actor2.GetBalance()}");
+                }
+
+                var topupWatch = new Stopwatch();
+                foreach (var account in Enumerable.Range(0, accountCount))
+                {
+                    var actor1 = client.GetGrain<IAccount>(account);
+                    topupTaskList.AddRange(Enumerable.Range(0, times).Select(async x =>
+                    {
+                        await actor1.TopUp(100, IdGen.CreateId().ToString());
+                    }));
                 }
 
                 topupWatch.Start();
@@ -62,7 +77,11 @@ namespace Transfer.Client
                 var transferTaskList = new List<Task>();
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
-                    transferTaskList.AddRange(Enumerable.Range(0, times).Select(x => client.GetGrain<IAccount>(account).Transfer(account + accountCount, 50, IdGen.CreateId().ToString())));
+                    transferTaskList.AddRange(Enumerable.Range(0, times).Select(async x =>
+                    {
+                        var actor = client.GetGrain<IAccount>(account);
+                        await actor.Transfer(account + accountCount, 50, IdGen.CreateId().ToString());
+                    }));
                 }
 
                 transferWatch.Start();
@@ -70,6 +89,7 @@ namespace Transfer.Client
                 transferWatch.Stop();
                 Console.WriteLine(
                     $"{times * accountCount}The transfer is completed, taking: {transferWatch.ElapsedMilliseconds}ms");
+                await Task.Delay(500);
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
                     Console.WriteLine($"The balance of account {account} is{await client.GetGrain<IAccount>(account).GetBalance()}");
@@ -77,7 +97,7 @@ namespace Transfer.Client
 
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
-                    Console.WriteLine($"The balance of account {account} is{await client.GetGrain<IAccount>(account + accountCount).GetBalance()}");
+                    Console.WriteLine($"The balance of account {account + accountCount} is{await client.GetGrain<IAccount>(account + accountCount).GetBalance()}");
                 }
             }
             catch (Exception e)
@@ -130,6 +150,7 @@ namespace Transfer.Client
                 transferWatch.Stop();
                 Console.WriteLine(
                     $"{times * accountCount}The transfer is completed, taking: {transferWatch.ElapsedMilliseconds}ms");
+                await Task.Delay(500);
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
                     Console.WriteLine($"The balance of account {account} is{await client.GetGrain<IDTxAccount>(account).GetBalance()}");

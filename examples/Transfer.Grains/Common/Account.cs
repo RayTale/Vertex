@@ -1,7 +1,13 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Transfer.Grains.Events;
 using Transfer.Grains.Snapshot;
 using Transfer.IGrains.Common;
+using Transfer.Repository;
+using Vertex.Abstractions.Snapshot;
 using Vertex.Runtime.Actor;
 using Vertex.Storage.Linq2db.Core;
 using Vertex.Stream.Common;
@@ -14,6 +20,33 @@ namespace Transfer.Grains.Common
     [Stream(nameof(Account), 3)]
     public sealed class Account : VertexActor<long, AccountSnapshot>, IAccount
     {
+        protected override async ValueTask CreateSnapshot()
+        {
+            await base.CreateSnapshot();
+            using (var db = new TransferDbContext())
+            {
+                var entity = await db.Accounts.FirstOrDefaultAsync(x => x.Id == this.ActorId);
+                if (entity != null)
+                {
+                    this.Snapshot.Data = this.ServiceProvider.GetService<IMapper>().Map<Repository.Entities.Account, AccountSnapshot>(entity);
+                }
+            }
+        }
+
+        public Task<bool> Create(decimal amount, string createId)
+        {
+            if (this.ActivateSnapshotVersion > 0 || this.Snapshot.Data.Balance != default)
+            {
+                return Task.FromResult(false);
+            }
+
+            var evt = new CreateEvent
+            {
+                Balance = amount
+            };
+            return this.RaiseEvent(evt, createId);
+        }
+
         public Task<decimal> GetBalance()
         {
             return Task.FromResult(this.Snapshot.Data.Balance);

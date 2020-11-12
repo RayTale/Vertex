@@ -6,6 +6,16 @@ namespace Transfer.Grains.Snapshot
 {
     public class AccountSnapshotHandler : SnapshotHandlerBase<long, AccountSnapshot>
     {
+        public void EventHandle(AccountSnapshot state, CreateEvent evt)
+        {
+            EntityHandle(state, evt);
+        }
+
+        public void EntityHandle(Account entity, CreateEvent evt)
+        {
+            entity.Balance = evt.Balance;
+        }
+
         public void EventHandle(AccountSnapshot state, TopupEvent evt)
         {
             EntityHandle(state, evt);
