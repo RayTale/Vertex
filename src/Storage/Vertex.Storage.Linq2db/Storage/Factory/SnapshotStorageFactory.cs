@@ -15,7 +15,7 @@ namespace Vertex.Storage.Linq2db.Storage
     public class SnapshotStorageFactory : ISnapshotStorageFactory
     {
         private readonly ConcurrentDictionary<Type, SnapshotStorageAttribute> typeAttributes = new ConcurrentDictionary<Type, SnapshotStorageAttribute>();
-        private readonly ConcurrentDictionary<string, Task<object>> eventStorageDict = new ConcurrentDictionary<string, Task<object>>();
+        private readonly ConcurrentDictionary<string, Lazy<Task<object>>> eventStorageDict = new ConcurrentDictionary<string, Lazy<Task<object>>>();
         private readonly DbFactory dbFactory;
         private readonly IGrainFactory grainFactory;
         private readonly IServiceProvider serviceProvider;
@@ -42,12 +42,13 @@ namespace Vertex.Storage.Linq2db.Storage
                 }
             });
             var tableName = attribute.ShardingFunc(actor.ActorId.ToString());
-            var storage = await this.eventStorageDict.GetOrAdd($"{attribute.OptionName}_{tableName}", async key =>
-             {
-                 using var db = this.dbFactory.GetEventDb(attribute.OptionName);
-                 await db.CreateTableIfNotExists<SnapshotEntity<TPrimaryKey>>(this.grainFactory, key, tableName);
-                 return new SnapshotStorage<TPrimaryKey>(this.serviceProvider, this.dbFactory, attribute.OptionName, tableName);
-             });
+            var storage = await this.eventStorageDict.GetOrAdd($"{attribute.OptionName}_{tableName}", key =>
+            new Lazy<Task<object>>(async () =>
+           {
+               using var db = this.dbFactory.GetEventDb(attribute.OptionName);
+               await db.CreateTableIfNotExists<SnapshotEntity<TPrimaryKey>>(this.grainFactory, key, tableName);
+               return new SnapshotStorage<TPrimaryKey>(this.serviceProvider, this.dbFactory, attribute.OptionName, tableName);
+           })).Value;
 
             return storage as ISnapshotStorage<TPrimaryKey>;
         }

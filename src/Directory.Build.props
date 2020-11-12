@@ -2,6 +2,7 @@
   <Import Project="..\Directory.Build.props" />
 
   <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" />
     <PackageReference Include="Microsoft.SourceLink.GitHub"/>
   </ItemGroup>
 </Project>

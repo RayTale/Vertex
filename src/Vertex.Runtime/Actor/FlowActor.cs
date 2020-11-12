@@ -332,7 +332,7 @@ namespace Vertex.Runtime.Actor
         /// <returns></returns>
         protected virtual async ValueTask DependencyInjection()
         {
-            this.VertexOptions = this.ServiceProvider.GetService<IOptionsSnapshot<SubActorOptions>>().Get(this.ActorType.FullName);
+            this.VertexOptions = this.ServiceProvider.GetService<IOptionsMonitor<SubActorOptions>>().Get(this.ActorType.FullName);
             this.Serializer = this.ServiceProvider.GetService<ISerializer>();
             this.EventTypeContainer = this.ServiceProvider.GetService<IEventTypeContainer>();
             this.Logger = (ILogger)this.ServiceProvider.GetService(typeof(ILogger<>).MakeGenericType(this.ActorType));
@@ -368,6 +368,16 @@ namespace Vertex.Runtime.Actor
             {
                 this.Logger.LogCritical(ex, "Activation failed: {0}->{1}", this.ActorType.FullName, this.ActorId.ToString());
                 throw;
+            }
+        }
+
+        public override async Task OnDeactivateAsync()
+        {
+            await this.SaveSnapshotAsync(true);
+
+            if (this.Logger.IsEnabled(LogLevel.Trace))
+            {
+                this.Logger.LogTrace("Deactivate completed: {0}->{1}", this.ActorType.Name, this.Serializer.Serialize(this.Snapshot));
             }
         }
 

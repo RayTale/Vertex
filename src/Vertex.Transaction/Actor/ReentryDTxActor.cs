@@ -33,7 +33,7 @@ namespace Vertex.Transaction.Actor
 
         protected async override ValueTask DependencyInjection()
         {
-            this.DtxOptions = this.ServiceProvider.GetService<IOptionsSnapshot<VertexDtxOptions>>().Get(this.ActorType.FullName);
+            this.DtxOptions = this.ServiceProvider.GetService<IOptionsMonitor<VertexDtxOptions>>().Get(this.ActorType.FullName);
             var txEventStorageFactory = this.ServiceProvider.GetService<ITxEventStorageFactory>();
             this.TxEventStorage = await txEventStorageFactory.Create(this);
             await base.DependencyInjection();
@@ -127,7 +127,7 @@ namespace Vertex.Transaction.Actor
         protected override async Task<bool> ConcurrentRaiseEvent(Func<SnapshotUnit<TPrimaryKey, T>, Func<IEvent, Task>, Task> handler, string flowId = default)
         {
             var txId = RequestContext.Get(RequestContextKeys.TxIdKey) as string;
-            var taskSource = new TaskCompletionSource<bool>();
+            var taskSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             await this.RequestChannel.WriteAsync(new TxEventTaskBox<SnapshotUnit<TPrimaryKey, T>>(txId, flowId, handler, taskSource));
             return await taskSource.Task;
         }

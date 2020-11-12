@@ -68,8 +68,8 @@ namespace Vertex.Runtime.Actor
         /// <returns></returns>
         protected virtual async ValueTask DependencyInjection()
         {
-            this.VertexOptions = this.ServiceProvider.GetService<IOptionsSnapshot<ActorOptions>>().Get(this.ActorType.FullName);
-            this.ArchiveOptions = this.ServiceProvider.GetService<IOptionsSnapshot<ArchiveOptions>>().Get(this.ActorType.FullName);
+            this.VertexOptions = this.ServiceProvider.GetService<IOptionsMonitor<ActorOptions>>().Get(this.ActorType.FullName);
+            this.ArchiveOptions = this.ServiceProvider.GetService<IOptionsMonitor<ArchiveOptions>>().Get(this.ActorType.FullName);
             this.Logger = (ILogger)this.ServiceProvider.GetService(typeof(ILogger<>).MakeGenericType(this.ActorType));
             this.Serializer = this.ServiceProvider.GetService<ISerializer>();
             this.EventTypeContainer = this.ServiceProvider.GetService<IEventTypeContainer>();

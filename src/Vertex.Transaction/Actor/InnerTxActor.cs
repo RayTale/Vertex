@@ -45,7 +45,7 @@ namespace Vertex.Transaction.Actor
 
         protected override ValueTask DependencyInjection()
         {
-            this.VertexTxOptions = this.ServiceProvider.GetService<IOptionsSnapshot<VertexTxOptions>>().Get(this.ActorType.FullName);
+            this.VertexTxOptions = this.ServiceProvider.GetService<IOptionsMonitor<VertexTxOptions>>().Get(this.ActorType.FullName);
             return base.DependencyInjection();
         }
 
