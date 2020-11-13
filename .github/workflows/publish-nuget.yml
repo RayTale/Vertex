@@ -1,8 +1,8 @@
 name: publish nuget
 
 on:
-  push:
-    types: [published]
+  release:
+    types: [created]
 
 jobs:
   build:
