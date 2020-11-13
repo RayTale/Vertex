@@ -26,9 +26,8 @@
 
     <PackageReference Update="System.Buffers" Version="4.5.1" />
     <PackageReference Update="System.Runtime.Loader" Version="4.3.0" />
-    <PackageReference Update="System.Text.Json" Version="4.7.2" />
-    <PackageReference Update="System.Threading.Tasks.Dataflow" Version="4.11.1" />
-
+    <PackageReference Update="System.Text.Json" Version="5.0.0" />
+    <PackageReference Update="System.Threading.Tasks.Dataflow" Version="5.0.0" />
     <PackageReference Update="Confluent.Kafka" Version="1.5.2" />
     <PackageReference Update="RabbitMQ.Client" Version="6.2.1" />
     <PackageReference Update="System.Reactive" Version="4.4.1" />
