@@ -35,7 +35,7 @@
     <PackageReference Update="IdGen" Version="3.0.0" />
 
     <PackageReference Update="Lindhart.Analyser.MissingAwaitWarning" Version="2.0.0-beta2" PrivateAssets="All" />
-    <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="3.6.0" PrivateAssets="All" />
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="3.8.0" PrivateAssets="All" />
     <PackageReference Update="Microsoft.Data.Sqlite" Version="5.0.0" />
     <PackageReference Update="Nerdbank.GitVersioning" Version="3.3.37" PrivateAssets="All" />
     <PackageReference Update="Microsoft.CodeQuality.Analyzers" Version="3.3.1">
