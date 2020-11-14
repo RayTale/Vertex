@@ -2,7 +2,7 @@ name: publish nuget
 
 on:
   release:
-    types: [created]
+    types: [prereleased]
 
 jobs:
   build:
