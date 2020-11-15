@@ -86,7 +86,7 @@ namespace Vertex.Transaction.Actor
             var commit = CurrentCommit.Value;
             try
             {
-                await this.ConcurrentRaiseEvent(new UnitCommitEvent { TxId = commit.TxId, Data = this.Serializer.Serialize(commit), StartTime = commit.Timestamp });
+                await this.ConcurrentRaiseEvent(new UnitCommitEvent { TxId = commit.TxId, Data = this.Serializer.SerializeToUtf8Bytes(commit), StartTime = commit.Timestamp });
                 await this.Commit(actors);
                 await this.Finish(actors);
             }
