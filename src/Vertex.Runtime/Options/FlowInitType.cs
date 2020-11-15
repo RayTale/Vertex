@@ -1,6 +1,6 @@
 ﻿namespace Vertex.Runtime.Options
 {
-    public enum SubInitType : byte
+    public enum FlowInitType : byte
     {
         None = 0,
 
