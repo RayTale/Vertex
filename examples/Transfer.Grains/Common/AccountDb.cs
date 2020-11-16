@@ -7,6 +7,7 @@ using Transfer.Grains.Snapshot;
 using Transfer.IGrains.Common;
 using Transfer.Repository;
 using Vertex.Abstractions.Actor;
+using Vertex.Abstractions.Snapshot;
 using Vertex.Runtime.Actor;
 using Vertex.Storage.Linq2db.Core;
 using Vertex.Stream.Common;
@@ -22,10 +23,10 @@ namespace Transfer.Grains.Common
         private readonly AccountSnapshotHandler accountSnapshotHandler;
         private readonly IMapper mapper;
 
-        public AccountDb(IGrainFactory grainFactory, AccountSnapshotHandler accountSnapshotHandler)
+        public AccountDb(IGrainFactory grainFactory, ISnapshotHandler<long, AccountSnapshot> snapshotHandler)
         {
             this.grainFactory = grainFactory;
-            this.accountSnapshotHandler = accountSnapshotHandler;
+            this.accountSnapshotHandler = snapshotHandler as AccountSnapshotHandler;
         }
 
         public override IVertexActor Vertex => this.grainFactory.GetGrain<IAccount>(this.ActorId);
@@ -40,7 +41,7 @@ namespace Transfer.Grains.Common
                     {
                         Id = this.ActorId
                     };
-
+                    
                     this.accountSnapshotHandler.EntityHandle(entity, evt);
                     db.Accounts.Add(entity);
                     await db.SaveChangesAsync();
