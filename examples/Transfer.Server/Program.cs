@@ -148,14 +148,14 @@ namespace Transfer.Server
                     {
                         options.CollectionAge = TimeSpan.FromMinutes(5);
                     });
-                    serviceCollection.ConfigureAll<SubActorOptions>(options =>
+                    serviceCollection.ConfigureAll<ActorOptions>(options =>
                     {
                         options.SnapshotVersionInterval = 1;
                     });
-                    //serviceCollection.Configure<SubActorOptions>(typeof(AccountFlow).FullName, options =>
-                    //{
-                    //    options.SnapshotVersionInterval = 10;
-                    //});
+                    serviceCollection.Configure<ActorOptions>(typeof(AccountFlow).FullName, options =>
+                     {
+                         options.SnapshotVersionInterval = 10;
+                     });
                     serviceCollection.AddAutoMapper(typeof(Account));
                     serviceCollection.AddSingleton(Configuration);
                 })

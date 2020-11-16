@@ -256,16 +256,10 @@ namespace Vertex.Transaction.Actor
         {
             if (this.BackupSnapshot.Meta.Version + 1 == eventUnit.Meta.Version)
             {
-                var copiedEvent = new EventUnit<TPrimaryKey>
-                {
-                    ActorId = this.ActorId,
-                    Event = this.Serializer.Deserialize(eventBytes, eventUnit.Event.GetType()) as IEvent,
-                    Meta = eventUnit.Meta with { }
-                };
-                this.SnapshotHandler.Apply(this.BackupSnapshot, copiedEvent);
+                this.SnapshotHandler.Apply(this.BackupSnapshot, eventUnit);
 
                 // Version of the update process
-                this.BackupSnapshot.Meta.ForceUpdateVersion(copiedEvent.Meta, this.ActorType);
+                this.BackupSnapshot.Meta.ForceUpdateVersion(eventUnit.Meta, this.ActorType);
             }
 
             // The parent is involved in the state archive

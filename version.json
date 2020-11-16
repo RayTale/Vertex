@@ -3,11 +3,11 @@
   "version": "1.0-alpha",
   "assemblyVersion": "1.0",
   "publicReleaseRefSpec": [
-    "^refs/heads/master$",
+    "^refs/heads/main$",
     "^refs/tags/v\\d+\\.\\d+"
   ],
   "nugetPackageVersion": {
-    "semVer": 2
+    "semVer": 1
   },
   "cloudBuild": {
     "buildNumber": {

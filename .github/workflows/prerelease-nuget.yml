@@ -1,8 +1,8 @@
-name: publish nuget
+name: prerelease nuget
 
 on:
-  push:
-    types: [published]
+  release:
+    types: [prereleased]
 
 jobs:
   build:
@@ -32,4 +32,7 @@ jobs:
         run: dotnet pack --configuration Release --no-build --output nupkgs -p:PackageVersion=$NBGV_NuGetPackageVersion
 
       - name: Publish NuGet
-        run: dotnet nuget push nupkgs/*.*nupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
+        run: |
+          cd nupkgs
+          dotnet nuget push *.nupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
+          dotnet nuget push *.snupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
