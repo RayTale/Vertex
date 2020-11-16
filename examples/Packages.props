@@ -13,5 +13,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Update="Microsoft.Orleans.Clustering.AdoNet" Version="3.3.0" />
  </ItemGroup>
 </Project>

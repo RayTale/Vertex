@@ -12,6 +12,7 @@
     <PackageReference Include="Microsoft.Orleans.OrleansRuntime" />
     <PackageReference Include="MySqlConnector" />
     <PackageReference Include="Npgsql" />
+    <PackageReference Include="Microsoft.Orleans.Clustering.AdoNet" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,6 +22,12 @@
     <ProjectReference Include="..\..\src\Stream\Vertex.Stream.RabbitMQ\Vertex.Stream.RabbitMQ.csproj" />
     <ProjectReference Include="..\..\src\Vertex.Runtime\Vertex.Runtime.csproj" />
     <ProjectReference Include="..\Transfer.Grains\Transfer.Grains.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

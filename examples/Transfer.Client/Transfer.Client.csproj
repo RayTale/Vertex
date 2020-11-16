@@ -9,6 +9,8 @@
     <PackageReference Include="IdGen" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     <PackageReference Include="Microsoft.Orleans.Core" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Microsoft.Orleans.Clustering.AdoNet" />
   </ItemGroup>
 
   <ItemGroup>

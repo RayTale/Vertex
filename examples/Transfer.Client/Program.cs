@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using IdGen;
 using Microsoft.Extensions.Logging;
 using Orleans;
+using Orleans.Configuration;
+using Orleans.Hosting;
 using Transfer.IGrains.Common;
 using Transfer.IGrains.DTx;
 
@@ -176,7 +179,18 @@ namespace Transfer.Client
                 try
                 {
                     var builder = new ClientBuilder()
-                        .UseLocalhostClustering()
+                        .Configure<ClusterOptions>(options =>
+                        {
+                            options.ClusterId = "dev";
+                            options.ServiceId = "Transfer";
+                        })
+                        //.UseLocalhostClustering()
+                        .UseAdoNetClustering(delegate (AdoNetClusteringClientOptions options)
+                        {
+                            options.Invariant = "Npgsql";
+                            options.ConnectionString =
+                                "Server=localhost;Port=5432;Database=Vertex;User Id=postgres;Password=postgres;Pooling=true;MaxPoolSize=20;";
+                        })
                         .ConfigureApplicationParts(parts =>
                             parts.AddApplicationPart(typeof(IAccount).Assembly).WithReferences())
                         .ConfigureLogging(logging => logging.AddConsole());
@@ -185,7 +199,7 @@ namespace Transfer.Client
                     Console.WriteLine("Client successfully connect to silo host");
                     break;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     attempt++;
                     Console.WriteLine(

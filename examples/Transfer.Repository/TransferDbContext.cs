@@ -3,8 +3,9 @@ using Transfer.Repository.Entities;
 
 namespace Transfer.Repository
 {
-    public class TransferDbContext : DbContext
+    public sealed class TransferDbContext : DbContext
     {
+        public static string ConnectionString { get; set; }
         public TransferDbContext()
         {
             this.Database.EnsureCreated();
@@ -15,7 +16,7 @@ namespace Transfer.Repository
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseNpgsql("Server=localhost;Port=5432;Database=Vertex;User Id=postgres;Password=postgres;Pooling=true;MaxPoolSize=20;");
+            optionsBuilder.UseNpgsql(ConnectionString);
             base.OnConfiguring(optionsBuilder);
         }
 
