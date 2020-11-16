@@ -1,0 +1,38 @@
+name: prerelease nuget
+
+on:
+  release:
+    types: [prereleased]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.100
+
+      - uses: dotnet/nbgv@master
+        with:
+          setAllVars: true
+      - run: echo "NuGetPackageVersion $NBGV_NuGetPackageVersion"
+
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Pack the NuGets
+        run: dotnet pack --configuration Release --no-build --output nupkgs -p:PackageVersion=$NBGV_NuGetPackageVersion
+
+      - name: Publish NuGet
+        run: |
+          cd nupkgs
+          dotnet nuget push *.nupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
+          dotnet nuget push *.snupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json

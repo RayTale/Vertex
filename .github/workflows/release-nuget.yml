@@ -1,8 +1,8 @@
-name: publish nuget
+name: release nuget
 
 on:
   release:
-    types: [created]
+    types: [released]
 
 jobs:
   build:
@@ -21,7 +21,7 @@ jobs:
       - uses: dotnet/nbgv@master
         with:
           setAllVars: true
-      - run: echo "NuGetPackageVersion $NBGV_NuGetPackageVersion"
+      - run: echo "NuGetPackageVersion $NBGV_MajorMinorVersion"
 
       - name: Install dependencies
         run: dotnet restore
@@ -29,7 +29,10 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Pack the NuGets
-        run: dotnet pack --configuration Release --no-build --output nupkgs -p:PackageVersion=$NBGV_NuGetPackageVersion
+        run: dotnet pack --configuration Release --no-build --output nupkgs -p:PackageVersion=$NBGV_MajorMinorVersion
 
       - name: Publish NuGet
-        run: dotnet nuget push nupkgs/*.*nupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
+        run: |
+          cd nupkgs
+          dotnet nuget push *.nupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
+          dotnet nuget push *.snupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
