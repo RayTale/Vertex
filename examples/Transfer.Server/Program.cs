@@ -110,14 +110,6 @@ namespace Transfer.Server
                     {
                         options.CollectionAge = TimeSpan.FromMinutes(5);
                     });
-                    serviceCollection.ConfigureAll<SubActorOptions>(options =>
-                    {
-                        options.SnapshotVersionInterval = 1;
-                    });
-                    serviceCollection.Configure<SubActorOptions>(typeof(AccountFlow).FullName, options =>
-                     {
-                         options.SnapshotVersionInterval = 10;
-                     });
                 })
                 .ConfigureLogging(logging =>
                 {

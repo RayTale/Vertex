@@ -1,6 +1,6 @@
 ﻿namespace Vertex.Runtime.Options
 {
-    public class SubActorOptions
+    public class FlowActorOptions
     {
         /// <summary>
         /// Event Version interval of RayGrain saving snapshot
@@ -17,6 +17,6 @@
         /// </summary>
         public int EventPageSize { get; set; } = 1000;
 
-        public SubInitType InitType { get; set; } = SubInitType.FirstReceive;
+        public FlowInitType InitType { get; set; } = FlowInitType.FirstReceive;
     }
 }
