@@ -44,7 +44,6 @@ namespace Transfer.Client
                 Console.WriteLine("Please enter the number of account");
                 var accountCount = int.Parse(Console.ReadLine() ?? "10");
                 Console.WriteLine("Please enter the number of executions");
-
                 var times = int.Parse(Console.ReadLine() ?? "10");
                 var topupTaskList = new List<Task>();
                 foreach (var account in Enumerable.Range(0, accountCount))

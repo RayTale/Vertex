@@ -21,7 +21,7 @@ namespace Vertex.Stream.Common
             }
             else
             {
-                var tableNames = Enumerable.Range(0, sharding).Select(index => $"{name}_{index}").ToList();
+                var tableNames = Enumerable.Range(0, sharding).Select(index => index == 0 ? name : $"{name}_{index}").ToList();
                 var hash = new ConsistentHash(tableNames, tableNames.Count * 10);
                 this.ShardingFunc = actorId => hash.GetNode(actorId);
             }
@@ -31,7 +31,7 @@ namespace Vertex.Stream.Common
         /// Listener name (if it is shadow, please set to null)
         /// </summary>
         public string Name { get; set; }
-
+        
         public Func<string, string> ShardingFunc { get; init; }
     }
 }
