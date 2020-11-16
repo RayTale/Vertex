@@ -287,7 +287,7 @@ namespace Vertex.Runtime.Actor
         }
 
         #region property
-        protected SubActorOptions VertexOptions { get; private set; }
+        protected FlowActorOptions VertexOptions { get; private set; }
 
         public abstract IVertexActor Vertex { get; }
 
@@ -332,7 +332,7 @@ namespace Vertex.Runtime.Actor
         /// <returns></returns>
         protected virtual async ValueTask DependencyInjection()
         {
-            this.VertexOptions = this.ServiceProvider.GetService<IOptionsMonitor<SubActorOptions>>().Get(this.ActorType.FullName);
+            this.VertexOptions = this.ServiceProvider.GetService<IOptionsMonitor<FlowActorOptions>>().Get(this.ActorType.FullName);
             this.Serializer = this.ServiceProvider.GetService<ISerializer>();
             this.EventTypeContainer = this.ServiceProvider.GetService<IEventTypeContainer>();
             this.Logger = (ILogger)this.ServiceProvider.GetService(typeof(ILogger<>).MakeGenericType(this.ActorType));
@@ -354,7 +354,7 @@ namespace Vertex.Runtime.Actor
             try
             {
                 await this.ReadSnapshotAsync();
-                if (this.Snapshot.Version != 0 || this.VertexOptions.InitType == SubInitType.ZeroVersion)
+                if (this.Snapshot.Version != 0 || this.VertexOptions.InitType == FlowInitType.ZeroVersion)
                 {
                     await this.Recovery();
                 }
