@@ -29,10 +29,9 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Pack the NuGets
-        run: dotnet pack --configuration Release --no-build --output nupkgs -p:PackageVersion=$NBGV_NuGetPackageVersion
+        run: dotnet pack --configuration Release --no-build -o . nupkgs -p:PackageVersion=$NBGV_NuGetPackageVersion
 
       - name: Publish NuGet
         run: |
-          cd nupkgs
-          dotnet nuget push *.nupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
-          dotnet nuget push *.snupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
+          dotnet nuget push **/*.nupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
+          dotnet nuget push **/*.snupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
