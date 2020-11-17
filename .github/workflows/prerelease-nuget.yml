@@ -29,7 +29,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Pack the NuGets
-        run: dotnet pack --configuration Release --no-build -o . nupkgs -p:PackageVersion=$NBGV_NuGetPackageVersion
+        run: dotnet pack --configuration Release --no-build -o . -p:PackageVersion=$NBGV_NuGetPackageVersion
 
       - name: Publish NuGet
         run: |
