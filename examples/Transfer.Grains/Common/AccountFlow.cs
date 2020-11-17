@@ -3,6 +3,7 @@ using Orleans;
 using Transfer.Grains.Events;
 using Transfer.IGrains.Common;
 using Vertex.Abstractions.Actor;
+using Vertex.Abstractions.Attributes;
 using Vertex.Runtime.Actor;
 using Vertex.Storage.Linq2db.Core;
 using Vertex.Stream.Common;
@@ -11,6 +12,7 @@ namespace Transfer.Grains.Common
 {
     [SnapshotStorage(Consts.CoreDbName, nameof(AccountFlow), 3)]
     [StreamSub(nameof(Account), "flow", 3)]
+    //[EventDiscard(typeof(CreateEvent), typeof(TopupEvent), typeof(TransferArrivedEvent), typeof(TransferRefundsEvent))]
 
     public sealed class AccountFlow : FlowActor<long>, IAccountFlow
     {

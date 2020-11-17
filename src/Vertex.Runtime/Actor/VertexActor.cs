@@ -442,15 +442,11 @@ namespace Vertex.Runtime.Actor
                 {
                     endVersion = results.Min(o => o.Version) - 1;
                 }
-
-                if (endVersion > startVersion)
+                var archiveEvents = await this.EventArchive.GetList(this.ActorId, startVersion, endVersion);
+                if (archiveEvents.Count > 0)
                 {
-                    var archiveEvents = await this.EventArchive.GetList(this.ActorId, startVersion, endVersion);
-                    if (archiveEvents.Count > 0)
-                    {
-                        results.AddRange(archiveEvents);
-                        results = results.OrderBy(r => r.Version).ToList();
-                    }
+                    results.AddRange(archiveEvents);
+                    results = results.OrderBy(r => r.Version).ToList();
                 }
             }
             return results.Select(o => new EventDocumentDto

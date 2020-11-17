@@ -150,12 +150,8 @@ namespace Transfer.Server
                     });
                     serviceCollection.ConfigureAll<ActorOptions>(options =>
                     {
-                        options.SnapshotVersionInterval = 1;
+                        options.SnapshotVersionInterval = 30;
                     });
-                    serviceCollection.Configure<ActorOptions>(typeof(AccountFlow).FullName, options =>
-                     {
-                         options.SnapshotVersionInterval = 10;
-                     });
                     serviceCollection.AddAutoMapper(typeof(Account));
                     serviceCollection.AddSingleton(Configuration);
                 })
