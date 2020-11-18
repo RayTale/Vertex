@@ -31,9 +31,7 @@ namespace Vertex.Storage.Linq2db.Core
             }
         }
 
-
         public string Name { get; init; }
-
 
         public override string GetOptionName(string actorId)
         {
