@@ -16,8 +16,8 @@ namespace Vertex.Storage.Linq2db.Storage
 {
     public class EventStorageFactory : IEventStorageFactory
     {
-        private readonly ConcurrentDictionary<Type, EventStorageAttribute> typeAttributes = new ConcurrentDictionary<Type, EventStorageAttribute>();
-        private readonly ConcurrentDictionary<string, Lazy<Task<object>>> eventStorageDict = new ConcurrentDictionary<string, Lazy<Task<object>>>();
+        private readonly ConcurrentDictionary<Type, EventStorageBaseAttribute> typeAttributes = new();
+        private readonly ConcurrentDictionary<string, Lazy<Task<object>>> eventStorageDict = new();
         private readonly DbFactory dbFactory;
         private readonly IGrainFactory grainFactory;
         private readonly IServiceProvider serviceProvider;
@@ -33,28 +33,31 @@ namespace Vertex.Storage.Linq2db.Storage
         {
             var attribute = this.typeAttributes.GetOrAdd(actor.GetType(), key =>
             {
-                var attributes = key.GetCustomAttributes(typeof(EventStorageAttribute), false);
-                if (attributes.Length > 0)
+                var attributes = key.GetCustomAttributes(false);
+                var attribute = attributes.SingleOrDefault(att => typeof(EventStorageBaseAttribute).IsAssignableFrom(att.GetType()));
+                if (attribute != default)
                 {
-                    return attributes.First() as EventStorageAttribute;
+                    return attribute as EventStorageBaseAttribute;
                 }
                 else
                 {
-                    throw new MissingAttributeException($"{nameof(EventStorageAttribute)}=>{key.Name}");
+                    throw new MissingAttributeException($"{nameof(EventStorageBaseAttribute)}=>{key.Name}");
                 }
             });
-            var tableName = attribute.ShardingFunc(actor.ActorId.ToString());
-            var storage = await this.eventStorageDict.GetOrAdd($"{attribute.OptionName}_{tableName}", key =>
+            var actorId = actor.ActorId.ToString();
+            var tableName = attribute.GetTableName(actorId);
+            var optionName = attribute.GetOptionName(actorId);
+            var storage = await this.eventStorageDict.GetOrAdd($"{optionName}_{tableName}", key =>
               new Lazy<Task<object>>(async () =>
               {
-                  using var db = this.dbFactory.GetEventDb(attribute.OptionName);
+                  using var db = this.dbFactory.GetEventDb(optionName);
                   await db.CreateTableIfNotExists<EventEntity<TPrimaryKey>>(this.grainFactory, key, tableName, async () =>
                   {
                       var indexGenerator = db.GetGenerator();
                       await indexGenerator.CreateUniqueIndexIfNotExists(db, tableName, $"{tableName}_event_unique", nameof(EventEntity<TPrimaryKey>.ActorId).ToLower(), nameof(EventEntity<TPrimaryKey>.Version).ToLower());
                       await indexGenerator.CreateUniqueIndexIfNotExists(db, tableName, $"{tableName}_event_flow_unique", nameof(EventEntity<TPrimaryKey>.ActorId).ToLower(), nameof(EventEntity<TPrimaryKey>.Name).ToLower(), nameof(EventEntity<TPrimaryKey>.FlowId).ToLower());
                   });
-                  return new EventStorage<TPrimaryKey>(this.serviceProvider, this.dbFactory, attribute.OptionName, tableName);
+                  return new EventStorage<TPrimaryKey>(this.serviceProvider, this.dbFactory, optionName, tableName);
               })).Value;
             return storage as IEventStorage<TPrimaryKey>;
         }
