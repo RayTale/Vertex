@@ -25,7 +25,7 @@ namespace Vertex.Runtime.Serialization
                 {
                     if (baseEventType.IsAssignableFrom(type))
                     {
-                        string eventName ;
+                        string eventName;
                         var attribute = type.GetCustomAttributes(attributeType, false).FirstOrDefault();
                         if (attribute != null && attribute is EventNameAttribute nameAttribute
                                               && nameAttribute.Name != default)
