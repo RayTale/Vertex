@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Serialization;
 using Vertex.Abstractions.Snapshot;
+using Vertex.Runtime.Event;
 using Vertex.Runtime.Serialization;
 using Vertex.Utils;
 using Vertex.Utils.Channels;
@@ -19,6 +20,7 @@ namespace Vertex.Runtime
             serviceCollection.AddSingleton<ISerializer, DefaultJsonSerializer>();
             serviceCollection.AddSingleton<IEventTypeContainer, EventTypeContainer>();
             serviceCollection.AddSingleton(typeof(TaskSourcePool<>));
+            serviceCollection.AddSingleton<IEventNameGenerator, EventNameGenerator>();
         }
 
         private static void AutoAddSnapshotHandler(this IServiceCollection serviceCollection)
