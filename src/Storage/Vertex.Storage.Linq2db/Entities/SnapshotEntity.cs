@@ -11,7 +11,7 @@ namespace Vertex.Storage.Linq2db.Entities
         [Column(DataType = DataType.VarChar, Length = 200)]
         public TPrimaryKey Id { get; set; }
 
-        [Column(DataType = DataType.Json)]
+        [Column(DataType = DataType.Text)]
         public string Data { get; set; }
 
         [Column]

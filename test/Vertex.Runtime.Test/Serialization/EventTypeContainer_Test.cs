@@ -25,17 +25,9 @@ namespace Vertex.Runtime.Test.Serialization
         [InlineData(typeof(NoNamedEvent))]
         public void TryGet_Name(Type type)
         {
-            if (type != typeof(NoNamedEvent))
-            {
-                var result = this.eventTypeContainer.TryGet(type, out var name);
-                Assert.Equal(name, type.Name);
-                Assert.True(result);
-            }
-            else
-            {
-                var result = this.eventTypeContainer.TryGet(type, out var _);
-                Assert.False(result);
-            }
+            var result = this.eventTypeContainer.TryGet(type, out var name);
+            Assert.Equal(name, type.Name);
+            Assert.True(result);
         }
 
         [Theory]
@@ -46,17 +38,9 @@ namespace Vertex.Runtime.Test.Serialization
         [InlineData(nameof(NoNamedEvent))]
         public void TryGet_Type(string name)
         {
-            if (name != nameof(NoNamedEvent))
-            {
-                var result = this.eventTypeContainer.TryGet(name, out var type);
-                Assert.Equal(name, type.Name);
-                Assert.True(result);
-            }
-            else
-            {
-                var result = this.eventTypeContainer.TryGet(name, out var _);
-                Assert.False(result);
-            }
+            var result = this.eventTypeContainer.TryGet(name, out var type);
+            Assert.Equal(name, type.Name);
+            Assert.True(result);
         }
     }
 }
