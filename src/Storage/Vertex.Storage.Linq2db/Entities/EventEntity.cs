@@ -13,7 +13,7 @@ namespace Vertex.Storage.Linq2db.Entities
         [Column(DataType = DataType.VarChar, Length = 200)]
         public string Name { get; set; }
 
-        [Column(DataType = DataType.Json)]
+        [Column(DataType = DataType.Text)]
         public string Data { get; set; }
 
         [Column(DataType = DataType.VarChar, Length = 200)]

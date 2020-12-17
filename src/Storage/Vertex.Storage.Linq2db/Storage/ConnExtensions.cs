@@ -34,7 +34,7 @@ namespace Vertex.Storage.Linq2db.Storage
                     await lockService.Unlock();
                     if (errorTimes <= 3)
                     {
-                        await CreateTableIfNotExists<TEntity>(conn, grainFactory, lockKey, tableName, initFunc, errorTimes++);
+                        await CreateTableIfNotExists<TEntity>(conn, grainFactory, lockKey, tableName, initFunc, errorTimes + 1);
                     }
                     else
                     {
