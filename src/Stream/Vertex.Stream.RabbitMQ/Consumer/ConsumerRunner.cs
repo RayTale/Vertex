@@ -81,7 +81,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                             }
                         }
 
-                        if (list.Count > 0)
+                        if (list.Any())
                         {
                             await this.Notice(list);
                         }
@@ -100,9 +100,10 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                     }
                     finally
                     {
-                        if (list.Count > 0)
+                        list = list.Where(o => o.Success).ToList();
+                        if (list.Any())
                         {
-                            var maxDeliveryTag = list.Where(o => o.Success).Max(o => ((BasicGetResult)o.Origin).DeliveryTag);
+                            var maxDeliveryTag = list.Max(o => ((BasicGetResult)o.Origin).DeliveryTag);
                             if (maxDeliveryTag > 0)
                             {
                                 this.Model.Model.BasicAck(maxDeliveryTag, true);
