@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -30,11 +31,12 @@ namespace Vertex.Runtime.Actor
 {
     public abstract class FlowActor<TPrimaryKey> : ActorBase<TPrimaryKey>, IFlowActor
     {
-        private static readonly ConcurrentDictionary<Type, Func<object, IEvent, EventMeta, Task>> GrainHandlerDict = new ConcurrentDictionary<Type, Func<object, IEvent, EventMeta, Task>>();
-        private static readonly ConcurrentDictionary<Type, EventDiscardAttribute> EventDiscardAttributeDict = new ConcurrentDictionary<Type, EventDiscardAttribute>();
-        private static readonly ConcurrentDictionary<Type, StrictHandleAttribute> EventStrictAttributerAttributeDict = new ConcurrentDictionary<Type, StrictHandleAttribute>();
+        private static readonly ConcurrentDictionary<Type, Func<object, IEvent, EventMeta, Task>> GrainHandlerDict = new();
+        private static readonly ConcurrentDictionary<Type, EventDiscardAttribute> EventDiscardAttributeDict = new();
+        private static readonly ConcurrentDictionary<Type, StrictHandleAttribute> EventStrictAttributerAttributeDict = new();
         private readonly Func<object, IEvent, EventMeta, Task> handlerInvokeFunc;
         private readonly EventDiscardAttribute discardAttribute;
+        private string snapshotCacheKey;
 
         public FlowActor()
         {
@@ -287,13 +289,15 @@ namespace Vertex.Runtime.Actor
         }
 
         #region property
-        protected FlowActorOptions VertexOptions { get; private set; }
+        protected FlowActorOptions FlowOptions { get; private set; }
 
         public abstract IVertexActor Vertex { get; }
 
         protected ILogger Logger { get; private set; }
 
         protected ISerializer Serializer { get; private set; }
+
+        protected IDistributedCache SnapshotCache { get; private set; }
 
         protected IEventTypeContainer EventTypeContainer { get; private set; }
 
@@ -306,6 +310,11 @@ namespace Vertex.Runtime.Actor
         /// The event version number of the snapshot
         /// </summary>
         protected long ActivateSnapshotVersion { get; private set; }
+
+        /// <summary>
+        /// The event version number of the snapshot cache
+        /// </summary>
+        protected long ActivateSnapshotCacheVersion { get; private set; }
 
         public ISubSnapshotStorage<TPrimaryKey> SnapshotStorage { get; private set; }
 
@@ -332,10 +341,16 @@ namespace Vertex.Runtime.Actor
         /// <returns></returns>
         protected virtual async ValueTask DependencyInjection()
         {
-            this.VertexOptions = this.ServiceProvider.GetService<IOptionsMonitor<FlowActorOptions>>().Get(this.ActorType.FullName);
+            this.FlowOptions = this.ServiceProvider.GetService<IOptionsMonitor<FlowActorOptions>>().Get(this.ActorType.FullName);
             this.Serializer = this.ServiceProvider.GetService<ISerializer>();
             this.EventTypeContainer = this.ServiceProvider.GetService<IEventTypeContainer>();
             this.Logger = (ILogger)this.ServiceProvider.GetService(typeof(ILogger<>).MakeGenericType(this.ActorType));
+
+            if (this.FlowOptions.EnableSnapshotCache)
+            {
+                this.SnapshotCache = this.ServiceProvider.GetRequiredService<IDistributedCache>();
+                this.snapshotCacheKey = $"vertex_flowactor_snapshot_{this.ActorType.Name}_{this.ActorId}";
+            }
 
             var snapshotStorageFactory = this.ServiceProvider.GetService<ISubSnapshotStorageFactory>();
             this.SnapshotStorage = await snapshotStorageFactory.Create(this);
@@ -354,7 +369,7 @@ namespace Vertex.Runtime.Actor
             try
             {
                 await this.ReadSnapshotAsync();
-                if (this.Snapshot.Version != 0 || this.VertexOptions.InitType == FlowInitType.ZeroVersion)
+                if (this.Snapshot.Version != 0 || this.FlowOptions.InitType == FlowInitType.ZeroVersion)
                 {
                     await this.Recovery();
                 }
@@ -373,7 +388,7 @@ namespace Vertex.Runtime.Actor
 
         public override async Task OnDeactivateAsync()
         {
-            await this.SaveSnapshotAsync(true);
+            await this.SaveSnapshotAsync(isDeactivate: true);
 
             if (this.Logger.IsEnabled(LogLevel.Trace))
             {
@@ -385,13 +400,28 @@ namespace Vertex.Runtime.Actor
         {
             try
             {
-                this.Snapshot = await this.SnapshotStorage.Get(this.ActorId);
-                if (this.Snapshot == null)
+                if (this.FlowOptions.EnableSnapshotCache)
+                {
+                    var snapshotBytes = await this.SnapshotCache.GetAsync(this.snapshotCacheKey);
+                    if (snapshotBytes != default)
+                    {
+                        this.Snapshot = this.Serializer.Deserialize<SubSnapshot<TPrimaryKey>>(snapshotBytes);
+                    }
+                }
+
+                if (this.Snapshot == default)
+                {
+                    this.Snapshot = await this.SnapshotStorage.Get(this.ActorId);
+                }
+
+                if (this.Snapshot == default)
                 {
                     await this.CreateSnapshot();
                 }
 
                 this.ActivateSnapshotVersion = this.Snapshot.Version;
+                this.ActivateSnapshotCacheVersion = this.Snapshot.Version;
+
                 if (this.Logger.IsEnabled(LogLevel.Trace))
                 {
                     this.Logger.LogTrace("ReadSnapshot completed: {0}->{1}", this.ActorType.FullName, this.Serializer.Serialize(this.Snapshot));
@@ -425,10 +455,10 @@ namespace Vertex.Runtime.Actor
         {
             while (true)
             {
-                var documentList = await this.Vertex.GetEventDocuments(this.Snapshot.Version + 1, this.Snapshot.Version + this.VertexOptions.EventPageSize);
+                var documentList = await this.Vertex.GetEventDocuments(this.Snapshot.Version + 1, this.Snapshot.Version + this.FlowOptions.EventPageSize);
                 var evtList = this.ConvertToEventUnitList(documentList);
                 await this.UnsafeTell(evtList);
-                if (documentList.Count < this.VertexOptions.EventPageSize)
+                if (documentList.Count < this.FlowOptions.EventPageSize)
                 {
                     break;
                 }
@@ -587,7 +617,7 @@ namespace Vertex.Runtime.Actor
             }
             catch
             {
-                await this.SaveSnapshotAsync(true);
+                await this.SaveSnapshotAsync(isError: true);
                 throw;
             }
         }
@@ -620,6 +650,7 @@ namespace Vertex.Runtime.Actor
             {
                 await Task.WhenAll(this.UnprocessedEventList.Select(@event => this.EventDelivered(@event).AsTask()));
                 this.Snapshot.UnsafeUpdateVersion(this.UnprocessedEventList.Last().Meta);
+
                 await this.SaveSnapshotAsync();
 
                 this.UnprocessedEventList.Clear();
@@ -671,43 +702,118 @@ namespace Vertex.Runtime.Actor
             return new ValueTask(this.handlerInvokeFunc(this, eventUnit.Event, eventUnit.Meta));
         }
 
+        /// <summary>
+        /// Custom save items
+        /// </summary>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual ValueTask OnSaveSnapshot() => ValueTask.CompletedTask;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual ValueTask OnSavedSnapshot() => ValueTask.CompletedTask;
 
-        protected virtual async ValueTask SaveSnapshotAsync(bool force = false)
+        protected virtual async ValueTask SaveSnapshotAsync(bool isDeactivate = false, bool isError = false)
         {
-            if ((force && this.Snapshot.Version > this.ActivateSnapshotVersion) ||
-                    (this.Snapshot.Version - this.ActivateSnapshotVersion >= this.VertexOptions.SnapshotVersionInterval))
+            if (isDeactivate)
             {
-                try
+                if (this.FlowOptions.EnableSnapshotCache)
+                {
+                    if (this.Snapshot.Version - this.ActivateSnapshotCacheVersion > this.FlowOptions.MinSnapshotCacheVersionInterval)
+                    {
+                        await this.OnSaveSnapshot(); // Custom save items
+                        await this.SaveSnapshotToCacheAsync();
+                    }
+                }
+                else if (this.Snapshot.Version - this.ActivateSnapshotVersion > this.FlowOptions.MinSnapshotVersionInterval)
                 {
                     await this.OnSaveSnapshot(); // Custom save items
-
-                    if (this.ActivateSnapshotVersion == 0)
-                    {
-                        await this.SnapshotStorage.Insert(this.Snapshot);
-                    }
-                    else
-                    {
-                        await this.SnapshotStorage.Update(this.Snapshot);
-                    }
-
-                    this.ActivateSnapshotVersion = this.Snapshot.Version;
-                    await this.OnSavedSnapshot();
-
-                    if (this.Logger.IsEnabled(LogLevel.Trace))
-                    {
-                        this.Logger.LogTrace("SaveSnapshot completed: {0}->{1}", this.ActorType.FullName, this.Serializer.Serialize(this.Snapshot));
-                    }
+                    await this.SaveSnapshotToDbAsync();
                 }
-                catch (Exception ex)
+            }
+            else if (isError)
+            {
+                if (this.FlowOptions.EnableSnapshotCache)
                 {
-                    this.Logger.LogCritical(ex, "SaveSnapshot failed: {0}->{1}", this.ActorType.FullName, this.ActorId.ToString());
-                    throw;
+                    if (this.Snapshot.Version > this.ActivateSnapshotCacheVersion)
+                    {
+                        await this.OnSaveSnapshot(); // Custom save items
+                        await this.SaveSnapshotToCacheAsync();
+                    }
                 }
+                else if (this.Snapshot.Version > this.ActivateSnapshotVersion)
+                {
+                    await this.OnSaveSnapshot(); // Custom save items
+                    await this.SaveSnapshotToDbAsync();
+                }
+            }
+            else
+            {
+                if (this.FlowOptions.EnableSnapshotCache)
+                {
+                    if (this.Snapshot.Version - this.ActivateSnapshotCacheVersion >= this.FlowOptions.SnapshotCacheVersionInterval)
+                    {
+                        await this.OnSaveSnapshot();
+                        await this.SaveSnapshotToCacheAsync();
+
+                        // Synchronize to DB
+                        if (this.Snapshot.Version - this.ActivateSnapshotVersion >= this.FlowOptions.SnapshotVersionInterval)
+                        {
+                            await this.SaveSnapshotToDbAsync();
+                        }
+                    }
+                }
+                else if (this.Snapshot.Version - this.ActivateSnapshotVersion >= this.FlowOptions.SnapshotVersionInterval)
+                {
+                    await this.OnSaveSnapshot();
+                    await this.SaveSnapshotToDbAsync();
+                }
+            }
+        }
+
+        protected virtual async Task SaveSnapshotToDbAsync()
+        {
+            try
+            {
+                if (this.ActivateSnapshotVersion == 0)
+                {
+                    await this.SnapshotStorage.Insert(this.Snapshot);
+                }
+                else
+                {
+                    await this.SnapshotStorage.Update(this.Snapshot);
+                }
+
+                this.ActivateSnapshotVersion = this.Snapshot.Version;
+
+                if (this.Logger.IsEnabled(LogLevel.Trace))
+                {
+                    this.Logger.LogTrace("Save snapshot to db completed: {0}->{1}", this.ActorType.FullName, this.Serializer.Serialize(this.Snapshot));
+                }
+            }
+            catch (Exception ex)
+            {
+                this.Logger.LogCritical(ex, "Save snapshot to db failed: {0}->{1}", this.ActorType.FullName, this.ActorId.ToString());
+                throw;
+            }
+        }
+
+        protected virtual async Task SaveSnapshotToCacheAsync()
+        {
+            try
+            {
+                await this.SnapshotCache.SetAsync(this.snapshotCacheKey, this.Serializer.SerializeToUtf8Bytes(this.Snapshot));
+
+                this.ActivateSnapshotCacheVersion = this.Snapshot.Version;
+
+                if (this.Logger.IsEnabled(LogLevel.Trace))
+                {
+                    this.Logger.LogTrace("Save snapshot to cache completed: {0}->{1}", this.ActorType.FullName, this.Serializer.Serialize(this.Snapshot));
+                }
+            }
+            catch (Exception ex)
+            {
+                this.Logger.LogCritical(ex, "Save snapshot to cache failed: {0}->{1}", this.ActorType.FullName, this.ActorId.ToString());
+                throw;
             }
         }
     }
