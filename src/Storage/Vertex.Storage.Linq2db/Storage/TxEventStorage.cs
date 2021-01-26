@@ -40,10 +40,7 @@ namespace Vertex.Storage.Linq2db.Storage
             try
             {
                 var copyResult = await table.BulkCopyAsync(inputList.Select(o => o.Value));
-                if (copyResult.RowsCopied == inputList.Count)
-                {
-                    inputList.ForEach(wrap => wrap.TaskSource.TrySetResult(true));
-                }
+                inputList.ForEach(wrap => wrap.TaskSource.TrySetResult(true));
             }
             catch (Exception ex)
             {
