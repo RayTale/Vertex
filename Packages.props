@@ -29,7 +29,7 @@
     <PackageReference Update="System.Text.Json" Version="5.0.1" />
     <PackageReference Update="System.Threading.Tasks.Dataflow" Version="5.0.0" />
     <PackageReference Update="Confluent.Kafka" Version="1.5.3" />
-    <PackageReference Update="RabbitMQ.Client" Version="6.2.1" />
+    <PackageReference Update="RabbitMQ.Client" Version="5.2.0" />
     <PackageReference Update="System.Reactive" Version="4.4.1" />
     <PackageReference Update="linq2db" Version="3.2.3" />
     <PackageReference Update="IdGen" Version="3.0.0" />
