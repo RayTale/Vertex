@@ -129,14 +129,26 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                         if (!this.runners.ContainsKey(key))
                         {
                             var weight = 100000 - this.runners.Count;
-                            var (isOk, lockId, expectMillisecondDelay) = await this.grainFactory.GetGrain<IWeightHoldLockActor>(key).Lock(weight, LockHoldingSeconds);
-                            if (isOk)
+                            while (true)
                             {
-                                if (this.runners.TryAdd(key, lockId))
+                                var (isOk, lockId, expectMillisecondDelay) = await this.grainFactory.GetGrain<IWeightHoldLockActor>(key).Lock(weight, LockHoldingSeconds);
+                                if (isOk)
                                 {
-                                    var runner = new ConsumerRunner(this.provider, queue);
-                                    this.consumerRunners.TryAdd(key, runner);
-                                    await runner.Run();
+                                    if (this.runners.TryAdd(key, lockId))
+                                    {
+                                        var runner = new ConsumerRunner(this.provider, queue);
+                                        this.consumerRunners.TryAdd(key, runner);
+                                        await runner.Run();
+                                        break;
+                                    }
+                                }
+                                else if (expectMillisecondDelay > 0)
+                                {
+                                    await Task.Delay(expectMillisecondDelay);
+                                }
+                                else
+                                {
+                                    break;
                                 }
                             }
                         }
