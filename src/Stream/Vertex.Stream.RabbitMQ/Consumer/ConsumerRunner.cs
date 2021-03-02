@@ -106,7 +106,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                             list = list.Where(o => o.Success).ToList();
                             if (list.Any())
                             {
-                                var maxDeliveryTag = list.Max(o => ((BasicGetResult) o.Origin).DeliveryTag);
+                                var maxDeliveryTag = list.Max(o => ((BasicGetResult)o.Origin).DeliveryTag);
                                 if (maxDeliveryTag > 0)
                                 {
                                     this.Model.Model.BasicAck(maxDeliveryTag, true);
