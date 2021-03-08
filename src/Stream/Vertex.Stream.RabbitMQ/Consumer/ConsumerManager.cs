@@ -139,8 +139,8 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                                         var runner = new ConsumerRunner(this.provider, queue);
                                         this.consumerRunners.TryAdd(key, runner);
                                         await runner.Run();
-                                        break;
                                     }
+                                    break;
                                 }
                                 else if (expectMillisecondDelay > 0)
                                 {

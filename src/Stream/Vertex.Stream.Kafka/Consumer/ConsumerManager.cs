@@ -144,6 +144,7 @@ namespace Vertex.Stream.Kafka.Consumer
                                         this.consumerRunners.TryAdd(key, runner);
                                         await runner.Run();
                                     }
+                                    break;
                                 }
                                 else if (expectMillisecondDelay > 0)
                                 {
