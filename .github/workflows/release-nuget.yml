@@ -21,7 +21,7 @@ jobs:
       - uses: dotnet/nbgv@master
         with:
           setAllVars: true
-      - run: echo "NuGetPackageVersion $NBGV_MajorMinorVersion"
+      - run: echo "NuGetPackageVersion $NBGV_Version"
 
       - name: Install dependencies
         run: dotnet restore
@@ -29,7 +29,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Pack the NuGets
-        run: dotnet pack --configuration Release --no-build -o . -p:PackageVersion=$NBGV_MajorMinorVersion
+        run: dotnet pack --configuration Release --no-build --include-symbols -o . -p:PackageVersion=$NBGV_Version
 
       - name: Publish NuGet
         run: |
