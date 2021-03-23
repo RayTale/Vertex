@@ -8,7 +8,7 @@
     <PackageReference Update="Microsoft.Extensions.DependencyModel" Version="5.0.0" />
     <PackageReference Update="Microsoft.Extensions.Caching.Abstractions" Version="5.0.0" />
     <PackageReference Update="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-    <PackageReference Update="Microsoft.Extensions.ObjectPool" Version="5.0.3" />
+    <PackageReference Update="Microsoft.Extensions.ObjectPool" Version="5.0.4" />
     <PackageReference Update="Microsoft.Extensions.Options" Version="5.0.0" />
     <PackageReference Update="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
     <PackageReference Update="BenchmarkDotNet" Version="0.12.1" />
@@ -28,7 +28,7 @@
     <PackageReference Update="System.Runtime.Loader" Version="4.3.0" />
     <PackageReference Update="System.Text.Json" Version="5.0.1" />
     <PackageReference Update="System.Threading.Tasks.Dataflow" Version="5.0.0" />
-    <PackageReference Update="Confluent.Kafka" Version="1.6.2" />
+    <PackageReference Update="Confluent.Kafka" Version="1.6.3" />
     <PackageReference Update="RabbitMQ.Client" Version="5.2.0" />
     <PackageReference Update="System.Reactive" Version="4.4.1" />
     <PackageReference Update="linq2db" Version="3.2.3" />
@@ -36,7 +36,7 @@
 
     <PackageReference Update="Lindhart.Analyser.MissingAwaitWarning" Version="2.0.0" PrivateAssets="All" />
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="3.9.0" PrivateAssets="All" />
-    <PackageReference Update="Microsoft.Data.Sqlite" Version="5.0.3" />
+    <PackageReference Update="Microsoft.Data.Sqlite" Version="5.0.4" />
     <PackageReference Update="Nerdbank.GitVersioning" Version="3.3.37" PrivateAssets="All" />
     <PackageReference Update="Microsoft.CodeQuality.Analyzers" Version="3.3.2">
       <PrivateAssets>all</PrivateAssets>
