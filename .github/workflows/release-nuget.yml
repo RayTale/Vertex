@@ -16,12 +16,12 @@ jobs:
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 5.0.102
+          dotnet-version: 5.0.201
 
       - uses: dotnet/nbgv@master
         with:
           setAllVars: true
-      - run: echo "NuGetPackageVersion $NBGV_Version"
+      - run: echo "NuGetPackageVersion $NBGV_SimpleVersion"
 
       - name: Install dependencies
         run: dotnet restore
@@ -29,7 +29,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Pack the NuGets
-        run: dotnet pack --configuration Release --no-build --include-symbols -o . -p:PackageVersion=$NBGV_Version
+        run: dotnet pack --configuration Release --no-build --include-symbols -o . -p:PackageVersion=$NBGV_SimpleVersion
 
       - name: Publish NuGet
         run: |
