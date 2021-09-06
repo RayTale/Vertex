@@ -17,7 +17,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Update="Microsoft.Orleans.OrleansProviders" Version="3.4.3"/>
+    <PackageReference Update="Microsoft.Orleans.OrleansProviders" Version="3.5.0"/>
     <PackageReference Update="Microsoft.Orleans.Core" Version="3.5.0" />
     <PackageReference Update="Microsoft.Orleans.Core.Abstractions" Version="3.4.3" />
     <PackageReference Update="Microsoft.Orleans.Runtime.Abstractions" Version="3.4.3" />
