@@ -12,7 +12,7 @@ namespace Vertex.Stream.InMemory.Grains
 
         public Task<Guid> GetId(string topic)
         {
-            var id = this.container.GetOrAdd(topic, key => new Guid());
+            var id = this.container.GetOrAdd(topic, key => Guid.NewGuid());
             return Task.FromResult(id);
         }
     }
