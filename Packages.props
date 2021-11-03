@@ -31,7 +31,7 @@
     <PackageReference Update="Confluent.Kafka" Version="1.8.1" />
     <PackageReference Update="RabbitMQ.Client" Version="5.2.0" />
     <PackageReference Update="System.Reactive" Version="4.4.1" />
-    <PackageReference Update="linq2db" Version="3.4.4" />
+    <PackageReference Update="linq2db" Version="3.5.1" />
     <PackageReference Update="IdGen" Version="3.0.0" />
 
     <PackageReference Update="Lindhart.Analyser.MissingAwaitWarning" Version="2.0.0" PrivateAssets="All" />
@@ -52,7 +52,7 @@
     </PackageReference>
 
     <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.0-beta-20204-02"  PrivateAssets="All"/>
-    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.11.0" />
+    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.0.0" />
     <PackageReference Update="xunit" Version="2.4.1" />
     <PackageReference Update="xunit.runner.visualstudio" Version="2.4.3">
       <PrivateAssets>all</PrivateAssets>
