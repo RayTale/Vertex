@@ -25,7 +25,6 @@ using Vertex.Runtime.Event;
 using Vertex.Runtime.Exceptions;
 using Vertex.Runtime.Options;
 using Vertex.Utils.Emit;
-using Vertex.Abstractions.Event;
 
 namespace Vertex.Runtime.Actor
 {
