@@ -6,7 +6,6 @@ using Vertex.Abstractions.Serialization;
 using Vertex.Protocol;
 using Vertex.Runtime.Event;
 using Vertex.Utils;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Transaction.Events
 {

@@ -3,10 +3,10 @@ using Orleans;
 using Transfer.Grains.Events;
 using Transfer.IGrains.Common;
 using Vertex.Abstractions.Actor;
+using Vertex.Abstractions.Event;
 using Vertex.Runtime.Actor;
 using Vertex.Storage.Linq2db.Core;
 using Vertex.Stream.Common;
-using Vertext.Abstractions.Event;
 
 namespace Transfer.Grains.Common
 {

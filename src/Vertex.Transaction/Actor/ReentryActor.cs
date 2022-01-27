@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
+using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Runtime;
 using Vertex.Transaction.Abstractions.Snapshot;
 using Vertex.Transaction.Events;
 using Vertex.Utils.Channels;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Transaction.Actor
 {

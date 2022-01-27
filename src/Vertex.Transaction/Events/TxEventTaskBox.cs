@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Vertext.Abstractions.Event;
+using Vertex.Abstractions.Event;
 
 namespace Vertex.Transaction.Events
 {

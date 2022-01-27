@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Orleans;
 using Vertex.Abstractions.Actor;
+using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Runtime.Actor;
 using Vertex.Runtime.Actor.Attributes;
@@ -10,7 +11,6 @@ using Vertex.Runtime.Core;
 using Vertex.Runtime.Test.Events;
 using Vertex.Runtime.Test.IActors;
 using Vertex.Storage.Linq2db.Core;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Test.Biz.Actors
 {

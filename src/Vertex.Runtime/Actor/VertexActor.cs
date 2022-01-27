@@ -19,7 +19,6 @@ using Vertex.Protocol;
 using Vertex.Runtime.Event;
 using Vertex.Runtime.Exceptions;
 using Vertex.Runtime.Options;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Actor
 {

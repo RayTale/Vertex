@@ -1,4 +1,4 @@
-﻿namespace Vertext.Abstractions.Event
+﻿namespace Vertex.Abstractions.Event
 {
     /// <summary>
     /// Marker interface for an Event

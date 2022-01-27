@@ -4,7 +4,6 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using Vertex.Abstractions.Event;
 using Vertex.Utils;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Serialization
 {

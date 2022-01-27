@@ -1,4 +1,4 @@
-﻿using Vertext.Abstractions.Event;
+﻿using Vertex.Abstractions.Event;
 
 namespace Vertex.Abstractions.Snapshot
 {

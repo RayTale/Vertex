@@ -13,7 +13,6 @@ using Vertex.Protocol;
 using Vertex.Runtime.Core;
 using Vertex.Runtime.Event;
 using Vertex.Runtime.Test.IActors;
-using Vertext.Abstractions.Event;
 using Xunit;
 
 namespace Vertex.Runtime.Test.ActorTest

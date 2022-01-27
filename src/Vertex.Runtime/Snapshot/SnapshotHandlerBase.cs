@@ -4,9 +4,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection.Emit;
 using Vertex.Abstractions.Attributes;
+using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Utils.Emit;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Snapshot
 {

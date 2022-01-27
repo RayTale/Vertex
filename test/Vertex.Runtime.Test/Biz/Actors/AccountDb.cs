@@ -2,13 +2,13 @@
 using System.Threading.Tasks;
 using Orleans;
 using Vertex.Abstractions.Actor;
+using Vertex.Abstractions.Event;
 using Vertex.Runtime.Actor;
 using Vertex.Runtime.Core;
 using Vertex.Runtime.Test.Events;
 using Vertex.Runtime.Test.IActors;
 using Vertex.Storage.Linq2db.Core;
 using Vertex.Stream.Common;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Test.Actors
 {

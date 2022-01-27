@@ -1,5 +1,4 @@
 ﻿using Vertex.Abstractions.Event;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Transaction.Events
 {

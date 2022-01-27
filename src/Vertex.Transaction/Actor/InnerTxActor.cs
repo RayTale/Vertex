@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans.Runtime;
+using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Runtime;
 using Vertex.Runtime.Actor;
@@ -15,7 +16,6 @@ using Vertex.Transaction.Abstractions.Snapshot;
 using Vertex.Transaction.Events;
 using Vertex.Transaction.Exceptions;
 using Vertex.Transaction.Options;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Transaction.Actor
 {
