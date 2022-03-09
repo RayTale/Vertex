@@ -36,7 +36,7 @@
 
     <PackageReference Update="Lindhart.Analyser.MissingAwaitWarning" Version="2.0.0" PrivateAssets="All" />
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" PrivateAssets="All" />
-    <PackageReference Update="Microsoft.Data.Sqlite" Version="6.0.1" />
+    <PackageReference Update="Microsoft.Data.Sqlite" Version="6.0.3" />
     <PackageReference Update="Nerdbank.GitVersioning" Version="3.4.255" PrivateAssets="All" />
     <PackageReference Update="Microsoft.CodeQuality.Analyzers" Version="3.3.2">
       <PrivateAssets>all</PrivateAssets>
