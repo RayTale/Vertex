@@ -72,7 +72,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                                 }
                                 else
                                 {
-                                    list.Add(new BytesBox(whileResult.Body, whileResult));
+                                    list.Add(new BytesBox(whileResult.Body.ToArray(), whileResult));
                                 }
 
                                 if ((DateTimeOffset.UtcNow - batchStartTime).TotalMilliseconds >
@@ -98,7 +98,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                                 $"An error occurred in {this.Queue}");
                             foreach (var item in list.Where(o => !o.Success))
                             {
-                                this.Model.Model.BasicReject(((BasicGetResult) item.Origin).DeliveryTag, true);
+                                this.Model.Model.BasicReject(((BasicGetResult)item.Origin).DeliveryTag, true);
                             }
                         }
                         finally

@@ -12,7 +12,7 @@
     <PackageReference Include="Microsoft.Orleans.OrleansRuntime" />
     <PackageReference Include="MySqlConnector" />
     <PackageReference Include="Npgsql" />
-    <PackageReference Include="Microsoft.Data.SqlClient"/>
+    <PackageReference Include="Microsoft.Data.SqlClient" />
   </ItemGroup>
 
   <ItemGroup>
