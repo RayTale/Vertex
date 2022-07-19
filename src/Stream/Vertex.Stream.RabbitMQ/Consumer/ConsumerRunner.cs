@@ -72,7 +72,7 @@ namespace Vertex.Stream.RabbitMQ.Consumer
                                 }
                                 else
                                 {
-                                    list.Add(new BytesBox(whileResult.Body, whileResult));
+                                    list.Add(new BytesBox(whileResult.Body.ToArray(), whileResult));
                                 }
 
                                 if ((DateTimeOffset.UtcNow - batchStartTime).TotalMilliseconds >
