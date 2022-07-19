@@ -1,5 +1,4 @@
-﻿using LinqToDB;
-using LinqToDB.Mapping;
+﻿using LinqToDB.Mapping;
 
 namespace Vertex.Storage.Linq2db.Entities
 {
@@ -7,8 +6,7 @@ namespace Vertex.Storage.Linq2db.Entities
     public class SubSnapshotEntity<TPrimaryKey>
     {
         [PrimaryKey]
-        [Column]
-        [Column(DataType = DataType.VarChar, Length = 200)]
+        [Column(Length = 200, CanBeNull = false)]
         public TPrimaryKey Id { get; set; }
 
         [Column]
