@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -340,7 +341,16 @@ namespace Vertex.Runtime.Actor
         /// <returns></returns>
         protected virtual async ValueTask DependencyInjection()
         {
-            this.FlowOptions = this.ServiceProvider.GetService<IOptionsMonitor<FlowActorOptions>>().Get(this.ActorType.FullName);
+            var optionPolicy = this.ActorType.GetCustomAttribute<FollowPolicyAttribute>(true);
+            if (optionPolicy != default)
+            {
+                this.FlowOptions = this.ServiceProvider.GetService<IOptionsMonitor<FlowActorOptions>>().Get(optionPolicy.OptionPolicy);
+            }
+            else
+            {
+                this.FlowOptions = this.ServiceProvider.GetService<IOptionsMonitor<FlowActorOptions>>().CurrentValue;
+            }
+
             this.Serializer = this.ServiceProvider.GetService<ISerializer>();
             this.EventTypeContainer = this.ServiceProvider.GetService<IEventTypeContainer>();
             this.Logger = (ILogger)this.ServiceProvider.GetService(typeof(ILogger<>).MakeGenericType(this.ActorType));
