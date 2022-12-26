@@ -96,7 +96,7 @@ namespace Vertex.Storage.EFCore.Storage
             using var db = this.dbFactory.GetEventDb(this.optionName);
             var tables = (await db.GetTables()).Where(this.tableFilter).ToList();
             tables.Reverse();
-            var capacity = (int)(endVersion - startVersion);
+            var capacity = (int)(endVersion - startVersion) + 1;
             var result = new List<EventDocument<TPrimaryKey>>(capacity);
             switch (actorId)
             {
