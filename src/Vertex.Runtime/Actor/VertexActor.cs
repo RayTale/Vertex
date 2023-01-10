@@ -419,25 +419,30 @@ namespace Vertex.Runtime.Actor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected async Task Archive(long endTimestamp)
         {
-            var takes = 0;
+            var skip = 0;
             while (true)
             {
-                var events = await this.EventStorage.GetList(this.ActorId, endTimestamp, takes, this.ArchiveOptions.EventPageSize);
+                var events = await this.EventStorage.GetList(this.ActorId, endTimestamp, skip, this.ArchiveOptions.EventPageSize);
                 if (events.Count > 0)
                 {
-                    await this.EventArchive.Arichive(events);
-                    this.Snapshot.Meta.MinEventTimestamp = events.Max(o => o.Timestamp);
-                    this.Snapshot.Meta.MinEventVersion += events.Count;
+                    var validEvents = events.Where(v => v.Version >= this.Snapshot.Meta.MinEventVersion).ToList();
+
+                    await this.EventArchive.Arichive(validEvents);
+                    this.Snapshot.Meta.MinEventTimestamp = validEvents.Max(o => o.Timestamp);
+                    this.Snapshot.Meta.MinEventVersion = validEvents.Max(o => o.Version) + 1;
                 }
+
                 if (events.Count < this.ArchiveOptions.EventPageSize)
                 {
                     break;
                 }
 
-                takes += events.Count;
+                skip += events.Count;
             }
+
             this.Snapshot.Meta.MinEventTimestamp = endTimestamp;
-            var isLatest = this.Snapshot.Meta.Version - this.Snapshot.Meta.MinEventVersion == -1;
+
+            var isLatest = this.Snapshot.Meta.Version - this.Snapshot.Meta.MinEventVersion < 0;
             await this.SaveSnapshotAsync(true, isLatest);
 
             await this.EventStorage.DeletePrevious(this.ActorId, this.Snapshot.Meta.MinEventVersion);
