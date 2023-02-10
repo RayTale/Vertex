@@ -54,7 +54,9 @@ namespace Vertex.Storage.Linq2db.Storage
             else
             {
                 var sp = conn.DataProvider.GetSchemaProvider();
-                var dbSchema = sp.GetSchema(conn);
+
+                // 这里会获取和执行存储过程，这需要设置不获取存储过程，
+                var dbSchema = sp.GetSchema(conn, new LinqToDB.SchemaProvider.GetSchemaOptions { GetProcedures = false });
                 return dbSchema.Tables.Select(t => t.TypeName).ToList();
             }
         }
