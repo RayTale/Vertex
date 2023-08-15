@@ -205,7 +205,7 @@ namespace Vertex.Transaction.Actor
 
         protected override async ValueTask OnTxRollback(string txId)
         {
-            if (!string.IsNullOrEmpty(txId) && this.EventTypeContainer.TryGet(typeof(TxFinishedEvent), out var eventName))
+            if (!string.IsNullOrEmpty(txId) && this.EventTypeContainer.TryGet(typeof(TxRollbackEvent), out var eventName))
             {
                 var rollbackEvent = new EventUnit<TPrimaryKey>
                 {
@@ -217,7 +217,7 @@ namespace Vertex.Transaction.Actor
                 {
                     FlowId = txId,
                     ActorId = this.ActorId,
-                    Data = this.Serializer.Serialize(rollbackEvent.Event as TxFinishedEvent),
+                    Data = this.Serializer.Serialize(rollbackEvent.Event as TxRollbackEvent),
                     Name = eventName,
                     Timestamp = rollbackEvent.Meta.Timestamp,
                     Version = rollbackEvent.Meta.Version,
