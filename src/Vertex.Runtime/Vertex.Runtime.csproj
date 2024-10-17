@@ -1,7 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 <Sdk Name="Microsoft.Build.CentralPackageVersions" />
   <ItemGroup>
     <PackageReference Include="IdGen" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" />
     <PackageReference Include="Microsoft.Orleans.Core" />

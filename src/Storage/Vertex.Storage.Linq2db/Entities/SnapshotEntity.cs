@@ -7,11 +7,10 @@ namespace Vertex.Storage.Linq2db.Entities
     public class SnapshotEntity<TPrimaryKey>
     {
         [PrimaryKey]
-        [Column]
-        [Column(DataType = DataType.VarChar, Length = 200)]
+        [Column(Length = 200, CanBeNull = false)]
         public TPrimaryKey Id { get; set; }
 
-        [Column(DataType = DataType.Json)]
+        [Column(DataType = DataType.Text)]
         public string Data { get; set; }
 
         [Column]

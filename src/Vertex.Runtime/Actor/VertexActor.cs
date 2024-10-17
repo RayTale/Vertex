@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,10 +17,10 @@ using Vertex.Abstractions.Serialization;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Abstractions.Storage;
 using Vertex.Protocol;
+using Vertex.Runtime.Actor.Attributes;
 using Vertex.Runtime.Event;
 using Vertex.Runtime.Exceptions;
 using Vertex.Runtime.Options;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Actor
 {
@@ -68,8 +69,18 @@ namespace Vertex.Runtime.Actor
         /// <returns></returns>
         protected virtual async ValueTask DependencyInjection()
         {
-            this.VertexOptions = this.ServiceProvider.GetService<IOptionsMonitor<ActorOptions>>().Get(this.ActorType.FullName);
-            this.ArchiveOptions = this.ServiceProvider.GetService<IOptionsMonitor<ArchiveOptions>>().Get(this.ActorType.FullName);
+            var optionPolicy = this.ActorType.GetCustomAttribute<VertexPolicyAttribute>(true);
+            if (optionPolicy != default)
+            {
+                this.VertexOptions = this.ServiceProvider.GetService<IOptionsMonitor<ActorOptions>>().Get(optionPolicy.OptionPolicy);
+                this.ArchiveOptions = this.ServiceProvider.GetService<IOptionsMonitor<ArchiveOptions>>().Get(optionPolicy.ArchiveOptionPolicy);
+            }
+            else
+            {
+                this.VertexOptions = this.ServiceProvider.GetService<IOptionsMonitor<ActorOptions>>().CurrentValue;
+                this.ArchiveOptions = this.ServiceProvider.GetService<IOptionsMonitor<ArchiveOptions>>().CurrentValue;
+            }
+
             this.Logger = (ILogger)this.ServiceProvider.GetService(typeof(ILogger<>).MakeGenericType(this.ActorType));
             this.Serializer = this.ServiceProvider.GetService<ISerializer>();
             this.EventTypeContainer = this.ServiceProvider.GetService<IEventTypeContainer>();
@@ -408,25 +419,30 @@ namespace Vertex.Runtime.Actor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected async Task Archive(long endTimestamp)
         {
-            var takes = 0;
+            var skip = 0;
             while (true)
             {
-                var events = await this.EventStorage.GetList(this.ActorId, endTimestamp, takes, this.ArchiveOptions.EventPageSize);
+                var events = await this.EventStorage.GetList(this.ActorId, endTimestamp, skip, this.ArchiveOptions.EventPageSize);
                 if (events.Count > 0)
                 {
-                    await this.EventArchive.Arichive(events);
-                    this.Snapshot.Meta.MinEventTimestamp = events.Max(o => o.Timestamp);
-                    this.Snapshot.Meta.MinEventVersion += events.Count;
+                    var validEvents = events.Where(v => v.Version >= this.Snapshot.Meta.MinEventVersion).ToList();
+
+                    await this.EventArchive.Arichive(validEvents);
+                    this.Snapshot.Meta.MinEventTimestamp = validEvents.Max(o => o.Timestamp);
+                    this.Snapshot.Meta.MinEventVersion = validEvents.Max(o => o.Version) + 1;
                 }
+
                 if (events.Count < this.ArchiveOptions.EventPageSize)
                 {
                     break;
                 }
 
-                takes += events.Count;
+                skip += events.Count;
             }
+
             this.Snapshot.Meta.MinEventTimestamp = endTimestamp;
-            var isLatest = this.Snapshot.Meta.Version - this.Snapshot.Meta.MinEventVersion == -1;
+
+            var isLatest = this.Snapshot.Meta.Version - this.Snapshot.Meta.MinEventVersion < 0;
             await this.SaveSnapshotAsync(true, isLatest);
 
             await this.EventStorage.DeletePrevious(this.ActorId, this.Snapshot.Meta.MinEventVersion);
@@ -442,11 +458,15 @@ namespace Vertex.Runtime.Actor
                 {
                     endVersion = results.Min(o => o.Version) - 1;
                 }
-                var archiveEvents = await this.EventArchive.GetList(this.ActorId, startVersion, endVersion);
-                if (archiveEvents.Count > 0)
+
+                if (endVersion >= startVersion)
                 {
-                    results.AddRange(archiveEvents);
-                    results = results.OrderBy(r => r.Version).ToList();
+                    var archiveEvents = await this.EventArchive.GetList(this.ActorId, startVersion, endVersion);
+                    if (archiveEvents.Count > 0)
+                    {
+                        results.AddRange(archiveEvents);
+                        results = results.OrderBy(r => r.Version).ToList();
+                    }
                 }
             }
             return results.Select(o => new EventDocumentDto

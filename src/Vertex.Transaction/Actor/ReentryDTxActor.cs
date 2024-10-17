@@ -13,7 +13,6 @@ using Vertex.Transaction.Abstractions.Snapshot;
 using Vertex.Transaction.Abstractions.Storage;
 using Vertex.Transaction.Events;
 using Vertex.Transaction.Options;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Transaction.Actor
 {

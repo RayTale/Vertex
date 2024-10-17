@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Orleans;
 using Orleans.Concurrency;
 using Orleans.Runtime;
 using Vertex.Abstractions.Actor;
@@ -17,7 +16,6 @@ using Vertex.Abstractions.Snapshot;
 using Vertex.Abstractions.Storage;
 using Vertex.Runtime.Exceptions;
 using Vertex.Runtime.Options;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Actor
 {

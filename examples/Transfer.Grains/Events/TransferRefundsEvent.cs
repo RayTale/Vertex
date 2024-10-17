@@ -1,5 +1,4 @@
 ﻿using Vertex.Abstractions.Event;
-using Vertext.Abstractions.Event;
 
 namespace Transfer.Grains.Events
 {

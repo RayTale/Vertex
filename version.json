@@ -1,13 +1,12 @@
 {
   "$schema": "https://raw.githubusercontent.com/dotnet/Nerdbank.GitVersioning/master/src/NerdBank.GitVersioning/version.schema.json",
-  "version": "1.0-alpha",
-  "assemblyVersion": "1.0",
+  "version": "1.5",
   "publicReleaseRefSpec": [
-    "^refs/heads/master$",
-    "^refs/tags/v\\d+\\.\\d+"
+    "^refs/heads/main$",
+    "^refs/tags/v\\d+\\.\\d+\\.\\d+"
   ],
   "nugetPackageVersion": {
-    "semVer": 2
+    "semVer": 1
   },
   "cloudBuild": {
     "buildNumber": {

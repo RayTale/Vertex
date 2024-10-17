@@ -1,0 +1,37 @@
+name: release nuget
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+
+      - uses: dotnet/nbgv@master
+        with:
+          setAllVars: true
+      - run: echo "NuGetPackageVersion $NBGV_MajorMinorVersion"
+
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Pack the NuGets
+        run: dotnet pack --configuration Release --no-build --include-symbols -o . -p:PackageVersion=$NBGV_MajorMinorVersion
+
+      - name: Publish NuGet
+        run: |
+          dotnet nuget push **/*.nupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
+          dotnet nuget push **/*.snupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json

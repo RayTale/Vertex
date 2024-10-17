@@ -8,21 +8,26 @@ namespace Vertex.Runtime.Serialization
 {
     public class DefaultJsonSerializer : ISerializer
     {
-        private static readonly JsonSerializerOptions Options = new JsonSerializerOptions() { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
+        private static readonly JsonSerializerOptions Options = new()
+        {
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
 
         public T Deserialize<T>(string json)
         {
-            return JsonSerializer.Deserialize<T>(json);
+            return JsonSerializer.Deserialize<T>(json, Options);
         }
 
         public object Deserialize(ReadOnlySpan<byte> bytes, Type type)
         {
-            return JsonSerializer.Deserialize(bytes, type);
+            return JsonSerializer.Deserialize(bytes, type, Options);
         }
 
         public object Deserialize(byte[] bytes, Type type)
         {
-            return JsonSerializer.Deserialize(bytes, type);
+            return JsonSerializer.Deserialize(bytes, type, Options);
         }
 
         public string Serialize<T>(T data)
@@ -42,7 +47,7 @@ namespace Vertex.Runtime.Serialization
 
         public T Deserialize<T>(byte[] bytes)
         {
-            return JsonSerializer.Deserialize<T>(bytes);
+            return JsonSerializer.Deserialize<T>(bytes, Options);
         }
 
         public byte[] SerializeToUtf8Bytes(object data, Type type)
@@ -52,7 +57,7 @@ namespace Vertex.Runtime.Serialization
 
         public object Deserialize(string json, Type type)
         {
-            return JsonSerializer.Deserialize(json, type);
+            return JsonSerializer.Deserialize(json, type, Options);
         }
     }
 }

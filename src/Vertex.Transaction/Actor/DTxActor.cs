@@ -11,7 +11,6 @@ using Vertex.Transaction.Abstractions.Snapshot;
 using Vertex.Transaction.Abstractions.Storage;
 using Vertex.Transaction.Events;
 using Vertex.Transaction.Options;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Transaction.Actor
 {
@@ -206,7 +205,7 @@ namespace Vertex.Transaction.Actor
 
         protected override async ValueTask OnTxRollback(string txId)
         {
-            if (!string.IsNullOrEmpty(txId) && this.EventTypeContainer.TryGet(typeof(TxFinishedEvent), out var eventName))
+            if (!string.IsNullOrEmpty(txId) && this.EventTypeContainer.TryGet(typeof(TxRollbackEvent), out var eventName))
             {
                 var rollbackEvent = new EventUnit<TPrimaryKey>
                 {
@@ -218,7 +217,7 @@ namespace Vertex.Transaction.Actor
                 {
                     FlowId = txId,
                     ActorId = this.ActorId,
-                    Data = this.Serializer.Serialize(rollbackEvent.Event as TxFinishedEvent),
+                    Data = this.Serializer.Serialize(rollbackEvent.Event as TxRollbackEvent),
                     Name = eventName,
                     Timestamp = rollbackEvent.Meta.Timestamp,
                     Version = rollbackEvent.Meta.Version,

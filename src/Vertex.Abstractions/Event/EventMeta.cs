@@ -1,6 +1,6 @@
 ﻿using Orleans.Concurrency;
 
-namespace Vertext.Abstractions.Event
+namespace Vertex.Abstractions.Event
 {
     /// <summary>
     /// Record the meta information of the event

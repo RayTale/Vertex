@@ -1,6 +1,5 @@
 ﻿using Vertex.Abstractions.Event;
 using Vertex.Transaction.Abstractions;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Transaction.Events.TxUnit
 {

@@ -2,8 +2,8 @@
 using System.Threading.Tasks;
 using Orleans;
 using Vertex.Abstractions.Actor;
+using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Snapshot;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Test.IActors
 {

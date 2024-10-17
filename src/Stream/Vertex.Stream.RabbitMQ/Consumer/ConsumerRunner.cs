@@ -44,73 +44,77 @@ namespace Vertex.Stream.RabbitMQ.Consumer
 
         public Task Run()
         {
+            this.Model = this.Client.PullModel();
+            if (this.isFirst)
+            {
+                this.isFirst = false;
+                this.Model.Model.ExchangeDeclare(this.Queue.Exchange, "direct", true);
+                this.Model.Model.QueueDeclare(this.Queue.Queue, true, false, false, null);
+                this.Model.Model.QueueBind(this.Queue.Queue, this.Queue.Exchange, this.Queue.RoutingKey);
+            }
+
             ThreadPool.UnsafeQueueUserWorkItem(
                 async state =>
-            {
-                this.Model = this.Client.PullModel();
-                if (this.isFirst)
                 {
-                    this.isFirst = false;
-                    this.Model.Model.ExchangeDeclare(this.Queue.Exchange, "direct", true);
-                    this.Model.Model.QueueDeclare(this.Queue.Queue, true, false, false, null);
-                    this.Model.Model.QueueBind(this.Queue.Queue, this.Queue.Exchange, this.Queue.RoutingKey);
-                }
-
-                while (!this.closed)
-                {
-                    var list = new List<BytesBox>();
-                    var batchStartTime = DateTimeOffset.UtcNow;
-                    try
+                    while (!this.closed)
                     {
-                        while (true)
+                        var list = new List<BytesBox>();
+                        var batchStartTime = DateTimeOffset.UtcNow;
+                        try
                         {
-                            var whileResult = this.Model.Model.BasicGet(this.Queue.Queue, this.consumerOptions.AutoAck);
-                            if (whileResult is null)
+                            while (true)
                             {
-                                break;
+                                var whileResult =
+                                    this.Model.Model.BasicGet(this.Queue.Queue, this.consumerOptions.AutoAck);
+                                if (whileResult is null)
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    list.Add(new BytesBox(whileResult.Body.ToArray(), whileResult));
+                                }
+
+                                if ((DateTimeOffset.UtcNow - batchStartTime).TotalMilliseconds >
+                                    this.Model.Connection.Options.CunsumerMaxMillisecondsInterval ||
+                                    list.Count == this.Model.Connection.Options.CunsumerMaxBatchSize)
+                                {
+                                    break;
+                                }
+                            }
+
+                            if (list.Any())
+                            {
+                                await this.Notice(list);
                             }
                             else
                             {
-                                list.Add(new BytesBox(whileResult.Body.ToArray(), whileResult));
+                                await Task.Delay(WhileTimeoutSpan);
                             }
-
-                            if ((DateTimeOffset.UtcNow - batchStartTime).TotalMilliseconds > this.Model.Connection.Options.CunsumerMaxMillisecondsInterval ||
-                            list.Count == this.Model.Connection.Options.CunsumerMaxBatchSize)
+                        }
+                        catch (Exception exception)
+                        {
+                            this.Logger.LogError(exception.InnerException ?? exception,
+                                $"An error occurred in {this.Queue}");
+                            foreach (var item in list.Where(o => !o.Success))
                             {
-                                break;
+                                this.Model.Model.BasicReject(((BasicGetResult)item.Origin).DeliveryTag, true);
                             }
                         }
-
-                        if (list.Count > 0)
+                        finally
                         {
-                            await this.Notice(list);
-                        }
-                        else
-                        {
-                            await Task.Delay(WhileTimeoutSpan);
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        this.Logger.LogError(exception.InnerException ?? exception, $"An error occurred in {this.Queue}");
-                        foreach (var item in list.Where(o => !o.Success))
-                        {
-                            this.Model.Model.BasicReject(((BasicGetResult)item.Origin).DeliveryTag, true);
-                        }
-                    }
-                    finally
-                    {
-                        if (list.Count > 0)
-                        {
-                            var maxDeliveryTag = list.Where(o => o.Success).Max(o => ((BasicGetResult)o.Origin).DeliveryTag);
-                            if (maxDeliveryTag > 0)
+                            list = list.Where(o => o.Success).ToList();
+                            if (list.Any())
                             {
-                                this.Model.Model.BasicAck(maxDeliveryTag, true);
+                                var maxDeliveryTag = list.Max(o => ((BasicGetResult)o.Origin).DeliveryTag);
+                                if (maxDeliveryTag > 0)
+                                {
+                                    this.Model.Model.BasicAck(maxDeliveryTag, true);
+                                }
                             }
                         }
                     }
-                }
-            }, null);
+                }, null);
             return Task.CompletedTask;
         }
 
@@ -120,11 +124,13 @@ namespace Vertex.Stream.RabbitMQ.Consumer
             {
                 if (list.Count > 1)
                 {
-                    await Task.WhenAll(this.Queue.SubActorType.Select(subType => this.streamSubHandler.EventHandler(subType, list)));
+                    await Task.WhenAll(this.Queue.SubActorType.Select(subType =>
+                        this.streamSubHandler.EventHandler(subType, list)));
                 }
                 else if (list.Count == 1)
                 {
-                    await Task.WhenAll(this.Queue.SubActorType.Select(subType => this.streamSubHandler.EventHandler(subType, list[0])));
+                    await Task.WhenAll(this.Queue.SubActorType.Select(subType =>
+                        this.streamSubHandler.EventHandler(subType, list[0])));
                 }
             }
             catch

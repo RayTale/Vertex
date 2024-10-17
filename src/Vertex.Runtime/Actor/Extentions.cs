@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using Orleans.Runtime;
+using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Runtime.Exceptions;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Actor
 {

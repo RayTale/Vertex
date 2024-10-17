@@ -1,8 +1,8 @@
-name: publish nuget
+name: prerelease nuget
 
 on:
-  push:
-    types: [published]
+  release:
+    types: [prereleased]
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 5.0.100
+          dotnet-version: 6.0.x
 
       - uses: dotnet/nbgv@master
         with:
@@ -29,7 +29,9 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Pack the NuGets
-        run: dotnet pack --configuration Release --no-build --output nupkgs -p:PackageVersion=$NBGV_NuGetPackageVersion
+        run: dotnet pack --configuration Release --no-build --include-symbols -o . -p:PackageVersion=$NBGV_NuGetPackageVersion
 
       - name: Publish NuGet
-        run: dotnet nuget push nupkgs/*.*nupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
+        run: |
+          dotnet nuget push **/*.nupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json
+          dotnet nuget push **/*.snupkg --api-key ${{ secrets.NUGETKEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json

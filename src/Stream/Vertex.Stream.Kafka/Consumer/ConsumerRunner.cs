@@ -40,12 +40,12 @@ namespace Vertex.Stream.Kafka.Consumer
 
         public Task Run()
         {
+            var consumer = this.Client.GetConsumer(this.Queue.Group);
+            consumer.Handler.Subscribe(this.Queue.Topic);
+            this.available = true;
             ThreadPool.UnsafeQueueUserWorkItem(
                 async state =>
             {
-                using var consumer = this.Client.GetConsumer(this.Queue.Group);
-                consumer.Handler.Subscribe(this.Queue.Topic);
-                this.available = true;
                 while (!this.closed)
                 {
                     var list = new List<BytesBox>();
@@ -107,6 +107,7 @@ namespace Vertex.Stream.Kafka.Consumer
                 }
                 this.available = false;
                 consumer.Handler.Unsubscribe();
+                consumer.Dispose();
             }, null);
             return Task.CompletedTask;
         }

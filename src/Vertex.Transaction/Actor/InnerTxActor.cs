@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans.Runtime;
+using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Runtime;
 using Vertex.Runtime.Actor;
@@ -15,7 +16,6 @@ using Vertex.Transaction.Abstractions.Snapshot;
 using Vertex.Transaction.Events;
 using Vertex.Transaction.Exceptions;
 using Vertex.Transaction.Options;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Transaction.Actor
 {
@@ -256,16 +256,10 @@ namespace Vertex.Transaction.Actor
         {
             if (this.BackupSnapshot.Meta.Version + 1 == eventUnit.Meta.Version)
             {
-                var copiedEvent = new EventUnit<TPrimaryKey>
-                {
-                    ActorId = this.ActorId,
-                    Event = this.Serializer.Deserialize(eventBytes, eventUnit.Event.GetType()) as IEvent,
-                    Meta = eventUnit.Meta with { }
-                };
-                this.SnapshotHandler.Apply(this.BackupSnapshot, copiedEvent);
+                this.SnapshotHandler.Apply(this.BackupSnapshot, eventUnit);
 
                 // Version of the update process
-                this.BackupSnapshot.Meta.ForceUpdateVersion(copiedEvent.Meta, this.ActorType);
+                this.BackupSnapshot.Meta.ForceUpdateVersion(eventUnit.Meta, this.ActorType);
             }
 
             // The parent is involved in the state archive

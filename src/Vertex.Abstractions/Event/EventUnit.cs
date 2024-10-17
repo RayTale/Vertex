@@ -1,4 +1,4 @@
-﻿namespace Vertext.Abstractions.Event
+﻿namespace Vertex.Abstractions.Event
 {
     /// <summary>
     /// A typed wrapper for an event that contains details about the event.

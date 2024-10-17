@@ -32,7 +32,7 @@ namespace Vertex.Utils.Channels
         /// </summary>
         private int maxMillisecondsDelay;
 
-        public ThreadChannel(ILogger<BufferBlockChannel<T>> logger, IOptions<ChannelOptions> options)
+        public ThreadChannel(ILogger<ThreadChannel<T>> logger, IOptions<ChannelOptions> options)
         {
             this.logger = logger;
             this.maxBatchSize = options.Value.MaxBatchSize;

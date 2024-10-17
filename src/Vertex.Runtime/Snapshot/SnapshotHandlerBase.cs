@@ -4,9 +4,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection.Emit;
 using Vertex.Abstractions.Attributes;
+using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Utils.Emit;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Snapshot
 {
@@ -233,12 +233,12 @@ namespace Vertex.Runtime.Snapshot
             }
         }
 
-        public void Apply(SnapshotUnit<TPrimaryKey, T> snapshotBox, EventUnit<TPrimaryKey> eventBox)
+        public virtual void Apply(SnapshotUnit<TPrimaryKey, T> snapshotBox, EventUnit<TPrimaryKey> eventBox)
         {
             this.handlerInvokeFunc(this, snapshotBox.Data, eventBox.Event, eventBox.Meta);
         }
 
-        public void DefaultHandler(IEvent evt)
+        public virtual void DefaultHandler(IEvent evt)
         {
             if (this.eventStrictAttributer != default
                 && (this.eventDiscardAttribute is null || !this.eventDiscardAttribute.Discards.Contains(evt.GetType())))

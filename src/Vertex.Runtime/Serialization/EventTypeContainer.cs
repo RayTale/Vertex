@@ -4,17 +4,16 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using Vertex.Abstractions.Event;
 using Vertex.Utils;
-using Vertext.Abstractions.Event;
 
 namespace Vertex.Runtime.Serialization
 {
     public class EventTypeContainer : IEventTypeContainer
     {
-        private readonly ConcurrentDictionary<string, Type> nameDict = new ConcurrentDictionary<string, Type>();
-        private readonly ConcurrentDictionary<Type, string> typeDict = new ConcurrentDictionary<Type, string>();
+        private readonly ConcurrentDictionary<string, Type> nameDict = new();
+        private readonly ConcurrentDictionary<Type, string> typeDict = new();
         private readonly ILogger<EventTypeContainer> logger;
 
-        public EventTypeContainer(ILogger<EventTypeContainer> logger)
+        public EventTypeContainer(ILogger<EventTypeContainer> logger, IEventNameGenerator eventNameGenerator)
         {
             this.logger = logger;
             var baseEventType = typeof(IEvent);
@@ -25,17 +24,23 @@ namespace Vertex.Runtime.Serialization
                 {
                     if (baseEventType.IsAssignableFrom(type))
                     {
+                        string eventName;
                         var attribute = type.GetCustomAttributes(attributeType, false).FirstOrDefault();
                         if (attribute != null && attribute is EventNameAttribute nameAttribute
                                               && nameAttribute.Name != default)
                         {
-                            if (!this.nameDict.TryAdd(nameAttribute.Name, type))
-                            {
-                                throw new ArgumentException(nameAttribute.Name);
-                            }
-
-                            this.typeDict.TryAdd(type, nameAttribute.Name);
+                            eventName = nameAttribute.Name;
                         }
+                        else
+                        {
+                            eventName = eventNameGenerator.GetName(type);
+                        }
+                        if (!this.nameDict.TryAdd(eventName, type))
+                        {
+                            throw new OverflowException(eventName);
+                        }
+
+                        this.typeDict.TryAdd(type, eventName);
                     }
                 }
             }
