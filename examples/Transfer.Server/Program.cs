@@ -47,13 +47,13 @@ namespace Transfer.Server
                             options.ServiceId = "Transfer";
                         })
                         .Configure<EndpointOptions>(options => options.AdvertisedIPAddress = IPAddress.Loopback)
-                        .ConfigureApplicationParts(parts =>
-                        {
-                            parts.AddApplicationPart(typeof(Account).Assembly).WithReferences();
-                            parts.AddApplicationPart(typeof(DIDActor).Assembly).WithReferences();
-                            parts.AddApplicationPart(typeof(StreamIdActor).Assembly).WithReferences();
-                        })
-                        .AddSimpleMessageStreamProvider("SMSProvider", options => options.FireAndForgetDelivery = true).AddMemoryGrainStorage("PubSubStore");
+                        // .ConfigureApplicationParts(parts =>
+                        // {
+                        //     parts.AddApplicationPart(typeof(Account).Assembly).WithReferences();
+                        //     parts.AddApplicationPart(typeof(DIDActor).Assembly).WithReferences();
+                        //     parts.AddApplicationPart(typeof(StreamIdActor).Assembly).WithReferences();
+                        // })
+                        .AddMemoryStreams("SMSProvider").AddMemoryGrainStorage("PubSubStore");
                 })
                 .ConfigureServices(serviceCollection =>
                 {
