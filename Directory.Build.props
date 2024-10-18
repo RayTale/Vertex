@@ -38,7 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Lindhart.Analyser.MissingAwaitWarning" />
-    <!-- <PackageReference Include="Microsoft.CodeQuality.Analyzers" /> -->
+<!--    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" /> -->
     <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" />
     <PackageReference Include="StyleCop.Analyzers" />
   </ItemGroup>

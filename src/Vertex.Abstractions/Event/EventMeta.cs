@@ -5,7 +5,7 @@ namespace Vertex.Abstractions.Event
     /// <summary>
     /// Record the meta information of the event
     /// </summary>
-    [Immutable]
+    [Orleans.Immutable]
     public record EventMeta
     {
         public string FlowId { get; set; }
