@@ -15,6 +15,7 @@
     
     <PackageReference Update="Microsoft.Orleans.OrleansProviders" Version="8.2.0"/>
     <PackageReference Update="Microsoft.Orleans.Core" Version="8.2.0" />
+    <PackageReference Update="Microsoft.Orleans.Sdk" Version="8.2.0" />
     <PackageReference Update="Microsoft.Orleans.Core.Abstractions" Version="8.2.0" />
     <PackageReference Update="Microsoft.Orleans.Runtime.Abstractions" Version="8.2.0" />
     <PackageReference Update="Microsoft.Orleans.OrleansRuntime" Version="8.2.0" />
@@ -28,7 +29,7 @@
     <PackageReference Update="RabbitMQ.Client" Version="6.8.1" />
     <PackageReference Update="System.Reactive" Version="6.0.1" />
     <PackageReference Update="linq2db" Version="4.1.1" />
-    <PackageReference Update="IdGen" Version="3.0.1" />
+    <PackageReference Update="IdGen" Version="3.0.7" />
 
     <PackageReference Update="Lindhart.Analyser.MissingAwaitWarning" Version="2.0.0" PrivateAssets="All" />
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" PrivateAssets="All" />

@@ -7,11 +7,13 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Orleans;
 using Orleans.Concurrency;
 using Orleans.Runtime;
 using Vertex.Abstractions.Actor;
@@ -364,10 +366,10 @@ namespace Vertex.Runtime.Actor
             var snapshotStorageFactory = this.ServiceProvider.GetService<ISubSnapshotStorageFactory>();
             this.SnapshotStorage = await snapshotStorageFactory.Create(this);
         }
-
-        public override async Task OnActivateAsync()
+        
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            await base.OnActivateAsync();
+            await base.OnActivateAsync(cancellationToken);
             await this.DependencyInjection();
 
             if (this.ConcurrentHandle)
@@ -395,13 +397,14 @@ namespace Vertex.Runtime.Actor
             }
         }
 
-        public override async Task OnDeactivateAsync()
+        public override async Task OnDeactivateAsync(DeactivationReason reason, CancellationToken cancellationToken)
         {
             await this.SaveSnapshotAsync(isDeactivate: true);
 
             if (this.Logger.IsEnabled(LogLevel.Trace))
             {
                 this.Logger.LogTrace("Deactivate completed: {0}->{1}", this.ActorType.Name, this.Serializer.Serialize(this.Snapshot));
+                this.Logger.LogTrace("Deactivate reason: {0}->{1}", this.ActorType.Name, reason.Description);
             }
         }
 
