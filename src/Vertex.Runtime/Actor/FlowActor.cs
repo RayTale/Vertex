@@ -366,7 +366,7 @@ namespace Vertex.Runtime.Actor
             var snapshotStorageFactory = this.ServiceProvider.GetService<ISubSnapshotStorageFactory>();
             this.SnapshotStorage = await snapshotStorageFactory.Create(this);
         }
-        
+
         public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
             await base.OnActivateAsync(cancellationToken);

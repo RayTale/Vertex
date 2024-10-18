@@ -16,10 +16,12 @@
     <PackageReference Update="Microsoft.Orleans.OrleansProviders" Version="8.2.0"/>
     <PackageReference Update="Microsoft.Orleans.Core" Version="8.2.0" />
     <PackageReference Update="Microsoft.Orleans.Sdk" Version="8.2.0" />
+    <PackageReference Update="Microsoft.Orleans.Streaming" Version="8.2.0" />
     <PackageReference Update="Microsoft.Orleans.Core.Abstractions" Version="8.2.0" />
     <PackageReference Update="Microsoft.Orleans.Runtime.Abstractions" Version="8.2.0" />
     <PackageReference Update="Microsoft.Orleans.OrleansRuntime" Version="8.2.0" />
     <PackageReference Update="Microsoft.Orleans.TestingHost" Version="8.2.0" />
+    <PackageReference Update="Microsoft.Orleans.Reminders" Version="8.2.0" />
 
     <PackageReference Update="System.Buffers" Version="4.5.1" />
     <PackageReference Update="System.Runtime.Loader" Version="4.3.0" />

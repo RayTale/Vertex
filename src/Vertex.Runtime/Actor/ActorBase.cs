@@ -19,15 +19,15 @@ namespace Vertex.Runtime.Actor
         /// </summary>
         public TPrimaryKey ActorId { get; private set; }
 
-        public Task OnActivateAsync()
-        {
-            return this.OnActivateAsync(CancellationToken.None);
-        }
-
         /// <summary>
         /// Gets the real Type of the current Grain.
         /// </summary>
         protected Type ActorType { get; }
+
+        public Task OnActivateAsync()
+        {
+            return this.OnActivateAsync(CancellationToken.None);
+        }
 
         public override Task OnActivateAsync(CancellationToken cancellationToken)
         {

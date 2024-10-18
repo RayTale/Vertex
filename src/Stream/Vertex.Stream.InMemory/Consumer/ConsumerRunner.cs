@@ -47,7 +47,7 @@ namespace Vertex.Stream.InMemory.Consumer
                 await this.streamSubscriptionHandle.UnsubscribeAsync();
             }
             this.streamId = await this.grainFactory.GetGrain<IStreamIdActor>(0).GetId(this.Queue.Topic);
-            var stream = this.streamProvider.GetStream<byte[]>(this.streamId, this.Queue.Name);
+            var stream = this.streamProvider.GetStream<byte[]>(this.Queue.Name, this.streamId);
             this.streamSubscriptionHandle = await stream.SubscribeAsync(async bytesList => await this.Notice(bytesList.Select(o => new BytesBox(o.Item, default)).ToList()));
         }
 

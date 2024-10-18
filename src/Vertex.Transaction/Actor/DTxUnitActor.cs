@@ -26,10 +26,10 @@ namespace Vertex.Transaction.Actor
         private readonly IdGenerator idGen = new IdGenerator(0);
         private IDisposable timer;
 
-        public override async Task OnActivateAsync()
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            await base.OnActivateAsync();
-            this.timer = this.RegisterTimer(
+            await base.OnActivateAsync(cancellationToken);
+            this.timer = this.RegisterGrainTimer<object>(
                 async state =>
                 {
                     foreach (var commit in this.Snapshot.Data.RequestDict.Values.Where(o => (DateTimeOffset.UtcNow.ToUnixTimeSeconds() - o.Timestamp) >= 60).ToList())
@@ -57,7 +57,7 @@ namespace Vertex.Transaction.Actor
                 new TimeSpan(0, 0, 30));
         }
 
-        public override async Task OnDeactivateAsync()
+        public override async Task OnDeactivateAsync(DeactivationReason reason, CancellationToken cancellationToken)
         {
             if (this.Snapshot.Data.RequestDict.Count > 0)
             {
@@ -72,7 +72,7 @@ namespace Vertex.Transaction.Actor
                 }
             }
             this.timer.Dispose();
-            await base.OnDeactivateAsync();
+            await base.OnDeactivateAsync(reason, cancellationToken);
         }
 
         public Task ReceiveReminder(string reminderName, TickStatus status)

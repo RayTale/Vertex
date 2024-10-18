@@ -3,8 +3,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
-    <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" />
-    <PackageReference Include="Microsoft.Orleans.Core.Abstractions" />
+    <PackageReference Include="Microsoft.Orleans.Sdk" />
+    <PackageReference Include="Microsoft.Orleans.Streaming" />
   </ItemGroup>
 
   <ItemGroup>

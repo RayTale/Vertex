@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -38,9 +39,9 @@ namespace Vertex.Transaction.Actor
             await base.DependencyInjection();
         }
 
-        public override async Task OnActivateAsync()
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            await base.OnActivateAsync();
+            await base.OnActivateAsync(cancellationToken);
             var txEvents = this.Convert(await this.TxEventStorage.GetLatest(this.ActorId, this.DtxOptions.RetainedTxEvents));
             if (txEvents.Count > 0)
             {
@@ -53,7 +54,7 @@ namespace Vertex.Transaction.Actor
             }
             if (!string.IsNullOrEmpty(this.TxSnapshot.TxId))
             {
-                await this.TxBeginLock.WaitAsync();
+                await this.TxBeginLock.WaitAsync(cancellationToken);
                 var documents = await this.EventStorage.GetList(this.ActorId, this.TxSnapshot.TxStartVersion, this.Snapshot.Meta.Version);
                 var waitingEvents = this.Convert(documents);
                 foreach (var evt in waitingEvents)

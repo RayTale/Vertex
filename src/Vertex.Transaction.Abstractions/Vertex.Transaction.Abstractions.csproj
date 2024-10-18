@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 <Sdk Name="Microsoft.Build.CentralPackageVersions" />
   <ItemGroup>
-    <PackageReference Include="Microsoft.Orleans.Runtime.Abstractions" />
+    <PackageReference Include="Microsoft.Orleans.Core.Abstractions" />
   </ItemGroup>
 
   <ItemGroup>

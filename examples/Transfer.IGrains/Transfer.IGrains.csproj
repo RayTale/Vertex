@@ -1,11 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
- <Import Project="..\Packages.props" />
- <ItemGroup>
-   <PackageReference Update="Microsoft.Extensions.Hosting" Version="8.0.1" />
-   <PackageReference Update="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
-   <PackageReference Update="MySqlConnector" Version="2.2.0" />
-   <PackageReference Update="Npgsql" Version="7.0.0" />
-   <PackageReference Update="Microsoft.Data.SqlClient" Version="5.0.0" />
- </ItemGroup>
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Sdk Name="Microsoft.Build.CentralPackageVersions" />
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Orleans.Sdk" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Vertex.Abstractions\Vertex.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Vertex.Transaction.Abstractions\Vertex.Transaction.Abstractions.csproj" />
+    </ItemGroup>
+
 </Project>
+
