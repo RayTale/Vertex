@@ -17,11 +17,11 @@ namespace Transfer.Client
     internal class Program
     {
         private static readonly IdGenerator IdGen = new IdGenerator(0);
-        private static IHost _host;
+        private static IHost host;
 
         private static async Task Main(string[] args)
         {
-             var client = await StartClientWithRetries();
+            var client = await StartClientWithRetries();
 
             while (true)
             {
@@ -40,7 +40,8 @@ namespace Transfer.Client
                     break;
                 }
             }
-            _host.Dispose();
+
+            host.Dispose();
         }
 
         private static async Task Normal(IClusterClient client)
@@ -177,11 +178,9 @@ namespace Transfer.Client
                 {
                     var builder = new HostBuilder()
                         .UseOrleansClient(clientBuilder => clientBuilder.UseLocalhostClustering())
-                        // .ConfigureApplicationParts(parts =>
-                        //     parts.AddApplicationPart(typeof(IAccount).Assembly).WithReferences())
                         .ConfigureLogging(logging => logging.AddConsole());
-                    _host = builder.Build();
-                    client = _host.Services.GetService<IClusterClient>();
+                    host = builder.Build();
+                    client = host.Services.GetService<IClusterClient>();
                     Console.WriteLine("Client successfully connect to silo host");
                     break;
                 }

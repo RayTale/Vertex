@@ -27,7 +27,7 @@ jobs:
       - name: Test
         run: dotnet test --configuration Release --no-build --verbosity normal --logger:trx
       - name: Upload Test Results
-        uses: actions/upload-artifact@v2.2.0
+        uses: actions/upload-artifact@v4
         with:
           # Artifact name
           name: Test Results
