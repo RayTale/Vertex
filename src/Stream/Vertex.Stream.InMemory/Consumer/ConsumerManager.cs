@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans;
-using Orleans.Runtime;
 using Orleans.Streams;
 using Vertex.Abstractions.Actor;
 using Vertex.Abstractions.InnerService;
@@ -124,7 +124,7 @@ namespace Vertex.Stream.InMemory.Consumer
         {
             try
             {
-                var streamProvider = this.provider.GetRequiredServiceByName<IStreamProvider>(this.streamOptions.ProviderName);
+                var streamProvider = this.provider.GetRequiredKeyedService<IStreamProvider>(this.streamOptions.ProviderName);
                 if (Interlocked.CompareExchange(ref this.distributedMonitorTimeLock, 1, 0) == 0)
                 {
                     foreach (var queue in this.queues)

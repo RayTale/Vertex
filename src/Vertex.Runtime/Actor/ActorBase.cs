@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Orleans;
 using Vertex.Abstractions.Actor;
@@ -23,7 +24,12 @@ namespace Vertex.Runtime.Actor
         /// </summary>
         protected Type ActorType { get; }
 
-        public override Task OnActivateAsync()
+        public Task OnActivateAsync()
+        {
+            return this.OnActivateAsync(CancellationToken.None);
+        }
+
+        public override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             var type = typeof(TPrimaryKey);
             if (type == typeof(long) && this.GetPrimaryKeyLong() is TPrimaryKey longKey)
@@ -43,7 +49,7 @@ namespace Vertex.Runtime.Actor
                 throw new ArgumentOutOfRangeException(typeof(TPrimaryKey).FullName);
             }
 
-            return base.OnActivateAsync();
+            return base.OnActivateAsync(cancellationToken);
         }
     }
 }

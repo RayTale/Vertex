@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Version Condition="'$(PackageVersion)' != ''">$(PackageVersion)</Version>
     <Version Condition="'$(PackageVersion)' == ''">$(Version)</Version>
@@ -38,7 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Lindhart.Analyser.MissingAwaitWarning" />
-    <!-- <PackageReference Include="Microsoft.CodeQuality.Analyzers" /> -->
+<!--    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" /> -->
     <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" />
     <PackageReference Include="StyleCop.Analyzers" />
   </ItemGroup>

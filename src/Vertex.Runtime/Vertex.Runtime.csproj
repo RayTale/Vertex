@@ -4,8 +4,7 @@
     <PackageReference Include="IdGen" />
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-    <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" />
-    <PackageReference Include="Microsoft.Orleans.Core" />
+    <PackageReference Include="Microsoft.Orleans.Sdk" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Orleans;
 using Orleans.Runtime;
@@ -62,9 +63,9 @@ namespace Vertex.Stream.InMemory
                 var streamId = await this.grainFactory.GetGrain<IStreamIdActor>(0).GetId(stream);
                 var result = this.streamDict.GetOrAdd(stream, key =>
                 {
-                    var streamProvider = this.serviceProvider.GetRequiredServiceByName<IStreamProvider>(this.streamOptions.ProviderName);
+                    var streamProvider = this.serviceProvider.GetRequiredKeyedService<IStreamProvider>(this.streamOptions.ProviderName);
 
-                    return new EventStream(streamProvider.GetStream<byte[]>(streamId, attribute.Name));
+                    return new EventStream(streamProvider.GetStream<byte[]>(attribute.Name, streamId));
                 });
                 return result;
             }

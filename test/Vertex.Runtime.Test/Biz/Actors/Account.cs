@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Orleans;
 using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Runtime.Actor;
@@ -119,7 +121,7 @@ namespace Vertex.Runtime.Test.Actors
 
         public async Task Deactivate_Test()
         {
-            await this.OnDeactivateAsync();
+            await this.OnDeactivateAsync(new DeactivationReason(DeactivationReasonCode.None, string.Empty), CancellationToken.None);
             await this.CreateSnapshot();
         }
 

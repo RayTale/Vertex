@@ -34,7 +34,7 @@ namespace Vertex.Runtime.Core
                         }
                     };
                 }, new EventArchivePolicy("month", (name, time) => $"Vertex_Archive_{name}_{DateTimeOffset.FromUnixTimeSeconds(time):yyyyMM}".ToLower(), table => table.StartsWith("Vertex_Archive".ToLower())));
-            }).AddSimpleMessageStreamProvider("SMSProvider", options => options.FireAndForgetDelivery = true).AddMemoryGrainStorage("PubSubStore");
+            }).AddMemoryStreams("SMSProvider").AddMemoryGrainStorage("PubSubStore");
         }
     }
 }

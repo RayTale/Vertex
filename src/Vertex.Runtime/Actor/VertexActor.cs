@@ -5,10 +5,12 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Orleans;
 using Orleans.Runtime;
 using Vertex.Abstractions.Actor;
 using Vertex.Abstractions.Event;
@@ -103,9 +105,9 @@ namespace Vertex.Runtime.Actor
         /// The method used to initialize is called when Grain is activated (overriding in subclasses is prohibited)
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public override async Task OnActivateAsync()
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            await base.OnActivateAsync();
+            await base.OnActivateAsync(cancellationToken);
             await this.DependencyInjection();
 
             // Load snapshot
@@ -250,7 +252,7 @@ namespace Vertex.Runtime.Actor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual ValueTask OnStartSaveSnapshot() => ValueTask.CompletedTask;
 
-        public override async Task OnDeactivateAsync()
+        public override async Task OnDeactivateAsync(DeactivationReason reason, CancellationToken cancellationToken)
         {
             try
             {
@@ -263,6 +265,7 @@ namespace Vertex.Runtime.Actor
                 if (this.Logger.IsEnabled(LogLevel.Trace))
                 {
                     this.Logger.LogTrace("Deactivate completed: {0}->{1}", this.ActorType.FullName, this.Serializer.Serialize(this.Snapshot));
+                    this.Logger.LogTrace("Deactivate reason: {0}->{1}", this.ActorType.Name, reason.Description);
                 }
             }
             catch (Exception ex)

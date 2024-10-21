@@ -4,5 +4,8 @@
     <ProjectReference Include="..\Vertex.Runtime\Vertex.Runtime.csproj" />
     <ProjectReference Include="..\Vertex.Transaction.Abstractions\Vertex.Transaction.Abstractions.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Orleans.Reminders" />
+  </ItemGroup>
 
 </Project>

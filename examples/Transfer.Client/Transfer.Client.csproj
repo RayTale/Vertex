@@ -1,17 +1,18 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 <Sdk Name="Microsoft.Build.CentralPackageVersions" />
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <IsPackable>false</IsPackable>
+	  <IsPackable>false</IsPackable>
+	  <OutputType>Exe</OutputType>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="IdGen" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
-    <PackageReference Include="Microsoft.Orleans.Core" />
+    <PackageReference Include="Microsoft.Orleans.CodeGenerator" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Storage\Vertex.Storage.Linq2db\Vertex.Storage.Linq2db.csproj" />
+    <ProjectReference Include="..\..\src\Stream\Vertex.Stream.Common\Vertex.Stream.Common.csproj" />
+    <ProjectReference Include="..\..\src\Vertex.Runtime\Vertex.Runtime.csproj" />
+    <ProjectReference Include="..\..\src\Vertex.Transaction\Vertex.Transaction.csproj" />
     <ProjectReference Include="..\Transfer.IGrains\Transfer.IGrains.csproj" />
   </ItemGroup>
 

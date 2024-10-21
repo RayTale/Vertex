@@ -4,8 +4,12 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using IdGen;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Orleans;
+using Orleans.Configuration;
+using Orleans.Hosting;
 using Transfer.IGrains.Common;
 using Transfer.IGrains.DTx;
 
@@ -14,10 +18,11 @@ namespace Transfer.Client
     internal class Program
     {
         private static readonly IdGenerator IdGen = new IdGenerator(0);
+        private static IHost host;
 
         private static async Task Main(string[] args)
         {
-            using var client = await StartClientWithRetries();
+            var client = await StartClientWithRetries();
 
             while (true)
             {
@@ -31,7 +36,13 @@ namespace Transfer.Client
                 {
                     await DTx(client);
                 }
+                else
+                {
+                    break;
+                }
             }
+
+            host.Dispose();
         }
 
         private static async Task Normal(IClusterClient client)
@@ -46,23 +57,28 @@ namespace Transfer.Client
                 var topupTaskList = new List<Task>();
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
-                    topupTaskList.AddRange(Enumerable.Range(0, times).Select(x => client.GetGrain<IAccount>(account).TopUp(100, IdGen.CreateId().ToString())));
+                    topupTaskList.AddRange(Enumerable.Range(0, times).Select(x =>
+                        client.GetGrain<IAccount>(account).TopUp(100, IdGen.CreateId().ToString())));
                 }
 
                 topupWatch.Start();
                 await Task.WhenAll(topupTaskList);
                 topupWatch.Stop();
-                Console.WriteLine($"{times * accountCount} Recharge completed, taking: {topupWatch.ElapsedMilliseconds}ms");
+                Console.WriteLine(
+                    $"{times * accountCount} Recharge completed, taking: {topupWatch.ElapsedMilliseconds}ms");
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
-                    Console.WriteLine($"The balance of account {account} is{await client.GetGrain<IAccount>(account).GetBalance()}");
+                    Console.WriteLine(
+                        $"The balance of account {account} is{await client.GetGrain<IAccount>(account).GetBalance()}");
                 }
 
                 var transferWatch = new Stopwatch();
                 var transferTaskList = new List<Task>();
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
-                    transferTaskList.AddRange(Enumerable.Range(0, times).Select(x => client.GetGrain<IAccount>(account).Transfer(account + accountCount, 50, IdGen.CreateId().ToString())));
+                    transferTaskList.AddRange(Enumerable.Range(0, times).Select(x =>
+                        client.GetGrain<IAccount>(account)
+                            .Transfer(account + accountCount, 50, IdGen.CreateId().ToString())));
                 }
 
                 transferWatch.Start();
@@ -72,12 +88,14 @@ namespace Transfer.Client
                     $"{times * accountCount}The transfer is completed, taking: {transferWatch.ElapsedMilliseconds}ms");
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
-                    Console.WriteLine($"The balance of account {account} is{await client.GetGrain<IAccount>(account).GetBalance()}");
+                    Console.WriteLine(
+                        $"The balance of account {account} is{await client.GetGrain<IAccount>(account).GetBalance()}");
                 }
 
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
-                    Console.WriteLine($"The balance of account {account} is{await client.GetGrain<IAccount>(account + accountCount).GetBalance()}");
+                    Console.WriteLine(
+                        $"The balance of account {account} is{await client.GetGrain<IAccount>(account + accountCount).GetBalance()}");
                 }
             }
             catch (Exception e)
@@ -98,16 +116,19 @@ namespace Transfer.Client
                 var topupTaskList = new List<Task>();
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
-                    topupTaskList.AddRange(Enumerable.Range(0, times).Select(x => client.GetGrain<IDTxAccount>(account).TopUp(100, IdGen.CreateId().ToString())));
+                    topupTaskList.AddRange(Enumerable.Range(0, times).Select(x =>
+                        client.GetGrain<IDTxAccount>(account).TopUp(100, IdGen.CreateId().ToString())));
                 }
 
                 topupWatch.Start();
                 await Task.WhenAll(topupTaskList);
                 topupWatch.Stop();
-                Console.WriteLine($"{times * accountCount} Recharge completed, taking: {topupWatch.ElapsedMilliseconds}ms");
+                Console.WriteLine(
+                    $"{times * accountCount} Recharge completed, taking: {topupWatch.ElapsedMilliseconds}ms");
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
-                    Console.WriteLine($"The balance of account {account} is{await client.GetGrain<IDTxAccount>(account).GetBalance()}");
+                    Console.WriteLine(
+                        $"The balance of account {account} is{await client.GetGrain<IDTxAccount>(account).GetBalance()}");
                 }
 
                 var transferWatch = new Stopwatch();
@@ -132,12 +153,14 @@ namespace Transfer.Client
                     $"{times * accountCount}The transfer is completed, taking: {transferWatch.ElapsedMilliseconds}ms");
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
-                    Console.WriteLine($"The balance of account {account} is{await client.GetGrain<IDTxAccount>(account).GetBalance()}");
+                    Console.WriteLine(
+                        $"The balance of account {account} is{await client.GetGrain<IDTxAccount>(account).GetBalance()}");
                 }
 
                 foreach (var account in Enumerable.Range(0, accountCount))
                 {
-                    Console.WriteLine($"The balance of account {account} is{await client.GetGrain<IDTxAccount>(account + accountCount).GetBalance()}");
+                    Console.WriteLine(
+                        $"The balance of account {account} is{await client.GetGrain<IDTxAccount>(account + accountCount).GetBalance()}");
                 }
             }
             catch (Exception e)
@@ -154,13 +177,20 @@ namespace Transfer.Client
             {
                 try
                 {
-                    var builder = new ClientBuilder()
-                        .UseLocalhostClustering()
-                        .ConfigureApplicationParts(parts =>
-                            parts.AddApplicationPart(typeof(IAccount).Assembly).WithReferences())
+                    var builder = new HostBuilder()
+                        .UseOrleansClient(clientBuilder =>
+                        {
+                            clientBuilder.UseLocalhostClustering();
+                            clientBuilder.Configure<ClusterOptions>(options =>
+                            {
+                                options.ClusterId = "dev";
+                                options.ServiceId = "Transfer";
+                            });
+                        })
                         .ConfigureLogging(logging => logging.AddConsole());
-                    client = builder.Build();
-                    await client.Connect();
+                    host = builder.Build();
+                    await host.StartAsync();
+                    client = host.Services.GetService<IClusterClient>();
                     Console.WriteLine("Client successfully connect to silo host");
                     break;
                 }

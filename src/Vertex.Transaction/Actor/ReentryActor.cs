@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Orleans;
 using Orleans.Runtime;
 using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Snapshot;
@@ -19,16 +21,16 @@ namespace Vertex.Transaction.Actor
     {
         protected IMpscChannel<TxEventTaskBox<SnapshotUnit<TPrimaryKey, T>>> RequestChannel { get; private set; }
 
-        public override async Task OnActivateAsync()
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            await base.OnActivateAsync();
+            await base.OnActivateAsync(cancellationToken);
             this.RequestChannel = this.ServiceProvider.GetService<IMpscChannel<TxEventTaskBox<SnapshotUnit<TPrimaryKey, T>>>>();
             this.RequestChannel.BindConsumer(this.RequestExecutor);
         }
 
-        public override async Task OnDeactivateAsync()
+        public override async Task OnDeactivateAsync(DeactivationReason reason, CancellationToken cancellationToken)
         {
-            await base.OnDeactivateAsync();
+            await base.OnDeactivateAsync(reason, cancellationToken);
             this.RequestChannel.Dispose();
         }
 
