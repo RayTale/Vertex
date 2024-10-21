@@ -14,7 +14,8 @@ namespace Vertex.Abstractions.Event
 
         [Id(1)]
         public EventMeta Meta { get; set; }
-        
+
+        [Id(3)]
         public IEvent Event { get; set; }
     }
 }
