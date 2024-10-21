@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Orleans;
+using Orleans.Configuration;
 using Orleans.Hosting;
 using Transfer.IGrains.Common;
 using Transfer.IGrains.DTx;
@@ -177,9 +178,18 @@ namespace Transfer.Client
                 try
                 {
                     var builder = new HostBuilder()
-                        .UseOrleansClient(clientBuilder => clientBuilder.UseLocalhostClustering())
+                        .UseOrleansClient(clientBuilder =>
+                        {
+                            clientBuilder.UseLocalhostClustering();
+                            clientBuilder.Configure<ClusterOptions>(options =>
+                            {
+                                options.ClusterId = "dev";
+                                options.ServiceId = "Transfer";
+                            });
+                        })
                         .ConfigureLogging(logging => logging.AddConsole());
                     host = builder.Build();
+                    await host.StartAsync();
                     client = host.Services.GetService<IClusterClient>();
                     Console.WriteLine("Client successfully connect to silo host");
                     break;
