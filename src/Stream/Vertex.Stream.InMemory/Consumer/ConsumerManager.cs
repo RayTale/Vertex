@@ -86,9 +86,9 @@ namespace Vertex.Stream.InMemory.Consumer
                 this.logger.LogInformation("EventBus Background Service is starting.");
             }
 
-            this.distributedMonitorTime = new Timer(state => this.DistributedStart().Wait(), null, 1000, MonitTime);
-            this.distributedHoldTimer = new Timer(state => this.DistributedHold().Wait(), null, HoldTime, HoldTime);
-            this.heathCheckTimer = new Timer(state => { this.HeathCheck().Wait(); }, null, CheckTime, CheckTime);
+            this.distributedMonitorTime = new Timer(state => this.DistributedStart().Wait(cancellationToken), null, 1000, MonitTime);
+            this.distributedHoldTimer = new Timer(state => this.DistributedHold().Wait(cancellationToken), null, HoldTime, HoldTime);
+            this.heathCheckTimer = new Timer(state => { this.HeathCheck().Wait(cancellationToken); }, null, CheckTime, CheckTime);
             return Task.CompletedTask;
         }
 
