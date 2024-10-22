@@ -7,7 +7,7 @@
     <PackageReference Update="Microsoft.Extensions.Logging.Debug" Version="6.0.0" />
     <PackageReference Update="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
     <PackageReference Update="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
-    <PackageReference Update="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />
+    <PackageReference Update="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
     <PackageReference Update="Microsoft.Extensions.ObjectPool" Version="6.0.7" />
     <PackageReference Update="Microsoft.Extensions.Options" Version="6.0.0" />
     <PackageReference Update="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
