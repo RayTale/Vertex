@@ -9,7 +9,7 @@ namespace Vertex.Storage.Linq2db.Db
         public SnapshotDb(string name)
             : base(name)
         {
-            this.MappingSchema.EntityDescriptorCreatedCallback = (schema, entityDescriptor) =>
+            LinqToDB.Mapping.MappingSchema.EntityDescriptorCreatedCallback = (schema, entityDescriptor) =>
             {
                 entityDescriptor.TableName = entityDescriptor.TableName.ToLower();
                 foreach (var entityDescriptorColumn in entityDescriptor.Columns)
