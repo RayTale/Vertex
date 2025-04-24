@@ -1,5 +1,7 @@
 ﻿using LinqToDB;
 using LinqToDB.Data;
+using LinqToDB.Mapping;
+
 using Vertex.Storage.Linq2db.Entities;
 
 namespace Vertex.Storage.Linq2db.Db
@@ -9,7 +11,7 @@ namespace Vertex.Storage.Linq2db.Db
         public SubSnapshotDb(string name)
             : base(name)
         {
-            this.MappingSchema.EntityDescriptorCreatedCallback = (schema, entityDescriptor) =>
+            MappingSchema.EntityDescriptorCreatedCallback = (schema, entityDescriptor) =>
             {
                 entityDescriptor.TableName = entityDescriptor.TableName.ToLower();
                 foreach (var entityDescriptorColumn in entityDescriptor.Columns)
