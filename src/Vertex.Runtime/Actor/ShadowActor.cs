@@ -15,6 +15,8 @@ using Vertex.Abstractions.Event;
 using Vertex.Abstractions.Serialization;
 using Vertex.Abstractions.Snapshot;
 using Vertex.Abstractions.Storage;
+using Vertex.Protocol;
+using Vertex.Runtime.Event;
 using Vertex.Runtime.Exceptions;
 using Vertex.Runtime.Options;
 
@@ -169,12 +171,53 @@ namespace Vertex.Runtime.Actor
 
         public Task OnNext(Immutable<byte[]> bytes)
         {
-            throw new NotImplementedException();
+            return this.OnNext(bytes.Value);
         }
 
-        public Task OnNext(Immutable<List<byte[]>> items)
+        public async Task OnNext(Immutable<List<byte[]>> items)
         {
-            throw new NotImplementedException();
+            foreach (var bytes in items.Value)
+            {
+                await this.OnNext(bytes);
+            }
+        }
+
+        private async Task OnNext(byte[] bytes)
+        {
+            if (this.TryConvertToEventUnit(bytes, out var data))
+            {
+                await this.Tell(data);
+                if (this.Logger.IsEnabled(LogLevel.Trace))
+                {
+                    this.Logger.LogTrace("OnNext completed: {0}->{1}->{2}", this.ActorType.FullName, this.ActorId.ToString(), this.Serializer.Serialize(data));
+                }
+            }
+            else
+            {
+                this.Logger.LogError(new ArgumentException(nameof(bytes)), "Deserialization failed");
+            }
+        }
+
+        protected bool TryConvertToEventUnit(byte[] bytes, out EventUnit<TPrimaryKey> eventUnit)
+        {
+            if (EventConverter.TryParseWithNoId(bytes, out var transport) &&
+                   this.EventTypeContainer.TryGet(transport.EventName, out var type))
+            {
+                var data = this.Serializer.Deserialize(transport.EventBytes, type);
+                if (data is IEvent @event)
+                {
+                    var eventMeta = transport.MetaBytes.ParseToEventMeta();
+                    eventUnit = new EventUnit<TPrimaryKey>
+                    {
+                        ActorId = this.ActorId,
+                        Meta = eventMeta,
+                        Event = @event
+                    };
+                    return true;
+                }
+            }
+            eventUnit = default;
+            return false;
         }
 
         protected async ValueTask Tell(EventUnit<TPrimaryKey> eventUnit)
