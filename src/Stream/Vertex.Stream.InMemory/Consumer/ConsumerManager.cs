@@ -22,7 +22,7 @@ namespace Vertex.Stream.InMemory.Consumer
     {
         private const int LockHoldingSeconds = 60;
         private const int HoldTime = 20 * 1000;
-        private const int MonitTime = 60 * 2 * 1000;
+        private const int MonitorTime = 60 * 2 * 1000;
         private const int CheckTime = 10 * 1000;
 
         private readonly List<QueueInfo> queues;
@@ -86,7 +86,7 @@ namespace Vertex.Stream.InMemory.Consumer
                 this.logger.LogInformation("EventBus Background Service is starting.");
             }
 
-            this.distributedMonitorTime = new Timer(state => this.DistributedStart().Wait(), null, 1000, MonitTime);
+            this.distributedMonitorTime = new Timer(state => this.DistributedStart().Wait(), null, 1000, MonitorTime);
             this.distributedHoldTimer = new Timer(state => this.DistributedHold().Wait(), null, HoldTime, HoldTime);
             this.heathCheckTimer = new Timer(state => { this.HeathCheck().Wait(); }, null, CheckTime, CheckTime);
             return Task.CompletedTask;

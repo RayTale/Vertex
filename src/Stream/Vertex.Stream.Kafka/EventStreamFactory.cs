@@ -2,26 +2,21 @@
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
-using Orleans;
 using Vertex.Abstractions.Actor;
 using Vertex.Abstractions.EventStream;
 using Vertex.Abstractions.Exceptions;
 using Vertex.Stream.Common;
-using Vertex.Utils;
 
 namespace Vertex.Stream.Kafka
 {
     public class EventStreamFactory : IEventStreamFactory
     {
-        private readonly ConcurrentDictionary<Type, StreamAttribute> typeAttributes = new ConcurrentDictionary<Type, StreamAttribute>();
-        private readonly ConcurrentDictionary<Type, ConsistentHash> hashDict = new ConcurrentDictionary<Type, ConsistentHash>();
-        private readonly ConcurrentDictionary<string, EventStream> streamDict = new ConcurrentDictionary<string, EventStream>();
-        private readonly IGrainFactory grainFactory;
+        private readonly ConcurrentDictionary<Type, StreamAttribute> typeAttributes = new();
+        private readonly ConcurrentDictionary<string, EventStream> streamDict = new();
         private readonly IKafkaClient client;
 
-        public EventStreamFactory(IKafkaClient client, IGrainFactory grainFactory)
+        public EventStreamFactory(IKafkaClient client)
         {
-            this.grainFactory = grainFactory;
             this.client = client;
         }
 

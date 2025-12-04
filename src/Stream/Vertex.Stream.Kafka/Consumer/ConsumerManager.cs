@@ -17,17 +17,16 @@ namespace Vertex.Stream.Kafka.Consumer
     public class ConsumerManager : IHostedService, IDisposable
     {
         private const int HoldTime = 20 * 1000;
-        private const int MonitTime = 60 * 2 * 1000;
+        private const int MonitorTime = 60 * 2 * 1000;
         private const int CheckTime = 10 * 1000;
         private const int LockHoldingSeconds = 60;
 
         private readonly List<QueueInfo> queues;
         private readonly ILogger<ConsumerManager> logger;
-        private readonly IKafkaClient client;
         private readonly IServiceProvider provider;
         private readonly IGrainFactory grainFactory;
-        private readonly ConcurrentDictionary<string, ConsumerRunner> consumerRunners = new ConcurrentDictionary<string, ConsumerRunner>();
-        private readonly ConcurrentDictionary<string, long> runners = new ConcurrentDictionary<string, long>();
+        private readonly ConcurrentDictionary<string, ConsumerRunner> consumerRunners = new();
+        private readonly ConcurrentDictionary<string, long> runners = new();
 
         private Timer distributedHoldTimer;
         private Timer distributedMonitorTime;
@@ -39,16 +38,14 @@ namespace Vertex.Stream.Kafka.Consumer
 
         public ConsumerManager(
             ILogger<ConsumerManager> logger,
-            IKafkaClient client,
             IGrainFactory grainFactory,
             IServiceProvider provider)
         {
             this.provider = provider;
-            this.client = client;
             this.logger = logger;
             this.grainFactory = grainFactory;
 
-            this.queues = new List<QueueInfo>();
+            this.queues = [];
             foreach (var assembly in AssemblyHelper.GetAssemblies(logger))
             {
                 foreach (var type in assembly.GetTypes())
@@ -87,7 +84,7 @@ namespace Vertex.Stream.Kafka.Consumer
                 this.logger.LogInformation("EventBus Background Service is starting.");
             }
 
-            this.distributedMonitorTime = new Timer(state => this.DistributedStart().Wait(), null, 1000, MonitTime);
+            this.distributedMonitorTime = new Timer(state => this.DistributedStart().Wait(), null, 1000, MonitorTime);
             this.distributedHoldTimer = new Timer(state => this.DistributedHold().Wait(), null, HoldTime, HoldTime);
             this.heathCheckTimer = new Timer(state => { this.HeathCheck().Wait(); }, null, CheckTime, CheckTime);
             return Task.CompletedTask;
